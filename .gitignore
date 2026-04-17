@@ -1,1 +1,4 @@
 spark/tar/hadoop-3.4.3.tar.gz
+workspace/data/**
+!workspace/data/gutenberg_books/
+!workspace/data/gutenberg_books/**
