@@ -26,6 +26,8 @@ docker compose up -d
 ```
 
 The Unity Catalog UI is available at `http://localhost:3000`.
+Spark UI is exposed on `http://localhost:4040` while a Spark application is running
+(Spark may move to `4041`/`4042` if those ports are already in use).
 
 ## Validate Unity Catalog is reachable
 

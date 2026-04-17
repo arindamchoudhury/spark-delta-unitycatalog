@@ -29,6 +29,10 @@ services:
     depends_on:
       - unitycatalog
     command: ["bash", "-lc", "sleep infinity"]
+    ports:
+      - "4040:4040"
+      - "4041:4041"
+      - "4042:4042"
     volumes:
       - ./metadata/uc:/tmp/uc
       - ./metadata/ivy:/tmp/.ivy2
