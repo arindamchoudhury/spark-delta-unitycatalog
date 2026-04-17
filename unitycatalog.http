@@ -1,0 +1,13 @@
+@baseUrl = http://localhost:8080
+
+### List catalogs
+GET {{baseUrl}}/api/2.1/unity-catalog/catalogs
+Accept: application/json
+
+### List schemas in unity
+GET {{baseUrl}}/api/2.1/unity-catalog/schemas?catalog_name=unity
+Accept: application/json
+
+### List tables in unity.default
+GET {{baseUrl}}/api/2.1/unity-catalog/tables?catalog_name=unity&schema_name=default
+Accept: application/json

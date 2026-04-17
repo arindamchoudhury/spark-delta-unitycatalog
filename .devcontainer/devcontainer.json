@@ -1,0 +1,30 @@
+{
+  "name": "spark-delta-unitycatalog",
+  "dockerComposeFile": [
+    "../docker-compose.yml"
+  ],
+  "service": "spark",
+  "runServices": [
+    "unitycatalog",
+    "ui",
+    "spark"
+  ],
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
+  "overrideCommand": false,
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/bin/python3"
+      },
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "ms-vscode-remote.remote-containers",
+        "humao.rest-client",
+        "ms-python.python",
+        "ms-toolsai.jupyter"
+      ]
+    }
+  }
+}

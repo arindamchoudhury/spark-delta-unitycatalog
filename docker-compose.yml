@@ -1,0 +1,37 @@
+services:
+  unitycatalog:
+    image: unitycatalog/unitycatalog:v0.4.0
+    container_name: unitycatalog
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./metadata/uc:/tmp/uc
+    networks:
+      default:
+        aliases:
+          - server
+
+  ui:
+    image: unitycatalog/unitycatalog-ui:main
+    container_name: unitycatalog-ui
+    ports:
+      - "3000:3000"
+    depends_on:
+      - unitycatalog
+
+  spark:
+    build:
+      context: .
+      dockerfile: spark/Dockerfile
+    image: spark-delta-unitycatalog/spark:4.1.1
+    container_name: spark
+    user: "0:0"
+    depends_on:
+      - unitycatalog
+    command: ["bash", "-lc", "sleep infinity"]
+    volumes:
+      - ./metadata/uc:/tmp/uc
+      - ./metadata/ivy:/tmp/.ivy2
+      - ./spark/conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
+      - ./scripts:/opt/spark/scripts:ro
+      - ./workspace:/workspace
