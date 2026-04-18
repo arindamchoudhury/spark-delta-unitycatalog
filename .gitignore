@@ -10,3 +10,11 @@ metadata/postgres/**
 
 # MinIO / S3
 metadata/minio/**
+
+# Additional Untracked Files
+workspace/dagster/.nux/
+workspace/dagster/.telemetry/
+workspace/dagster/__pycache__/
+workspace/dagster/history/
+workspace/dagster/storage/
+bundle-*.jar
