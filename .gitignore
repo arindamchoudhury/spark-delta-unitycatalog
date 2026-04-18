@@ -4,3 +4,11 @@ metadata/uc/**
 workspace/data/**
 !workspace/data/gutenberg_books/
 !workspace/data/gutenberg_books/**
+
+# Dagster Execution Artifacts & DBs
+workspace/dagster/__pycache__/
+workspace/dagster/history/
+workspace/dagster/storage/
+workspace/dagster/logs/
+workspace/dagster/.telemetry/
+workspace/dagster/.nux/
