@@ -124,3 +124,20 @@ folders under `./metadata/uc` and `./metadata/ivy`.
 - This setup is for local experimentation, not production.
 - The Spark container runs as root to simplify write access on the shared host directory mounted at `/tmp/uc`.
 - For a production-like setup, replace the shared local path with S3/ADLS/GCS and configure Unity Catalog storage credentials and external locations.
+
+## Services
+
+- `unitycatalog`: The open source Unity Catalog server running on port `8080`.
+- `ui`: The Unity Catalog UI running on port `3000`.
+- `spark`: The PySpark 4.1.1 execution environment running a Spark Connect server on port `15002`.
+- `dagster`: A modern data orchestrator running on port `3001` that schedules and manages data pipelines.
+
+## Orchestration (Dagster & Spark Connect)
+
+This project uses **Dagster** to schedule and orchestrate Spark jobs. Instead of running heavy JVM PySpark workloads inside the Dagster orchestrator, we employ **Spark Connect** to enforce separation of concerns:
+
+1. **Dagster Container:** Runs the orchestration UI and schedules pipeline execution.
+2. **Spark Container:** Runs a dedicated Spark Connect server (`/opt/spark/sbin/start-connect-server.sh`).
+3. **Execution:** Dagster initializes a remote SparkSession (`SparkSession.builder.remote("sc://spark:15002").getOrCreate()`). The Python client logic executes in the `dagster` container, but all JVM data processing and Unity Catalog interactions are remotely pushed to the `spark` container.
+
+To use the Dagster UI, visit `http://localhost:3001`.

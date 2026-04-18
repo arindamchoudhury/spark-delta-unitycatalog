@@ -28,11 +28,30 @@ services:
     user: "0:0"
     depends_on:
       - unitycatalog
-    command: ["bash", "-lc", "sleep infinity"]
+    command: ["bash", "-lc", "/opt/spark/sbin/start-connect-server.sh && sleep infinity"]
     ports:
       - "4040:4040"
       - "4041:4041"
       - "4042:4042"
+      - "15002:15002"
+    volumes:
+      - ./metadata/uc:/tmp/uc
+      - ./metadata/ivy:/tmp/.ivy2
+      - ./spark/conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
+      - ./scripts:/opt/spark/scripts:ro
+      - ./workspace:/workspace
+
+  dagster:
+    image: spark-delta-unitycatalog/spark:4.1.1
+    container_name: dagster
+    user: "0:0"
+    depends_on:
+      - spark
+    command: ["dagster", "dev", "-h", "0.0.0.0", "-p", "3001", "-w", "/workspace/dagster/workspace.yaml"]
+    ports:
+      - "3001:3001"
+    environment:
+      - DAGSTER_HOME=/workspace/dagster
     volumes:
       - ./metadata/uc:/tmp/uc
       - ./metadata/ivy:/tmp/.ivy2

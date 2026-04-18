@@ -1,0 +1,7 @@
+[32m2026-04-18 09:23:28 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 2cb4022a-8ddc-44a5-bbc5-be2aea24dd06 - 69504 - LOGS_CAPTURED - Started capturing logs in process (pid: 69504).
+[32m2026-04-18 09:23:28 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 2cb4022a-8ddc-44a5-bbc5-be2aea24dd06 - 69504 - my_first_spark_asset - STEP_START - Started execution of step "my_first_spark_asset".
+[32m2026-04-18 09:23:30 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 2cb4022a-8ddc-44a5-bbc5-be2aea24dd06 - 69504 - my_first_spark_asset - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
+[32m2026-04-18 09:23:30 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 2cb4022a-8ddc-44a5-bbc5-be2aea24dd06 - my_first_spark_asset - Writing file at: /workspace/dagster/storage/my_first_spark_asset using PickledObjectFilesystemIOManager...
+[32m2026-04-18 09:23:30 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 2cb4022a-8ddc-44a5-bbc5-be2aea24dd06 - 69504 - my_first_spark_asset - ASSET_MATERIALIZATION - Materialized value my_first_spark_asset.
+[32m2026-04-18 09:23:30 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 2cb4022a-8ddc-44a5-bbc5-be2aea24dd06 - 69504 - my_first_spark_asset - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
+[32m2026-04-18 09:23:30 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 2cb4022a-8ddc-44a5-bbc5-be2aea24dd06 - 69504 - my_first_spark_asset - STEP_SUCCESS - Finished execution of step "my_first_spark_asset" in 1.91s.

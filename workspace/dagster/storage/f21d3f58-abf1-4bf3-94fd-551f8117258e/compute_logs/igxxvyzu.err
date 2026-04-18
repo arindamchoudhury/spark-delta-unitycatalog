@@ -1,0 +1,95 @@
+[32m2026-04-18 09:09:53 +0000[0m - dagster - [34mDEBUG[0m - process_elements_job - f21d3f58-abf1-4bf3-94fd-551f8117258e - 32309 - LOGS_CAPTURED - Started capturing logs in process (pid: 32309).
+[32m2026-04-18 09:09:53 +0000[0m - dagster - [34mDEBUG[0m - process_elements_job - f21d3f58-abf1-4bf3-94fd-551f8117258e - 32309 - raw_elements_table - STEP_START - Started execution of step "raw_elements_table".
+[32m2026-04-18 09:09:56 +0000[0m - dagster - [34mERROR[0m - [31mprocess_elements_job - f21d3f58-abf1-4bf3-94fd-551f8117258e - 32309 - raw_elements_table - STEP_FAILURE - Execution of step "raw_elements_table" failed.
+
+dagster._core.errors.DagsterExecutionStepExecutionError: Error occurred while executing op "raw_elements_table"::
+
+pyspark.errors.exceptions.connect.UnsupportedOperationException: REPLACE TABLE AS SELECT (RTAS) is not supported
+
+JVM stacktrace:
+java.lang.UnsupportedOperationException
+	at io.unitycatalog.spark.UCSingleCatalog.stageCreateOrReplace(UCSingleCatalog.scala:260)
+	at org.apache.spark.sql.connector.catalog.StagingTableCatalog.stageCreateOrReplace(StagingTableCatalog.java:205)
+	at io.unitycatalog.spark.UCSingleCatalog.stageCreateOrReplace(UCSingleCatalog.scala:31)
+	at org.apache.spark.sql.connector.catalog.StagingTableCatalog.stageCreateOrReplace(StagingTableCatalog.java:235)
+	at org.apache.spark.sql.execution.datasources.v2.AtomicReplaceTableAsSelectExec.run(WriteToDataSourceV2Exec.scala:237)
+	at org.apache.spark.sql.execution.datasources.v2.V2CommandExec.result$lzycompute(V2CommandExec.scala:43)
+	at org.apache.spark.sql.execution.datasources.v2.V2CommandExec.result(V2CommandExec.scala:43)
+	at org.apache.spark.sql.execution.datasources.v2.V2CommandExec.executeCollect(V2CommandExec.scala:49)
+	at org.apache.spark.sql.execution.QueryExecution.$anonfun$eagerlyExecuteCommands$2(QueryExecution.scala:185)
+	at org.apache.spark.sql.execution.SQLExecution$.$anonfun$withNewExecutionId0$8(SQLExecution.scala:177)
+	at org.apache.spark.sql.execution.SQLExecution$.withSessionTagsApplied(SQLExecution.scala:285)
+	at org.apache.spark.sql.execution.SQLExecution$.$anonfun$withNewExecutionId0$7(SQLExecution.scala:139)
+	at org.apache.spark.JobArtifactSet$.withActiveJobArtifactState(JobArtifactSet.scala:94)
+	at org.apache.spark.sql.artifact.ArtifactManager.$anonfun$withResources$1(ArtifactManager.scala:112)
+	at org.apache.spark.util.Utils$.withContextClassLoader(Utils.scala:185)
+	at org.apache.spark.sql.artifact.ArtifactManager.withClassLoaderIfNeeded(ArtifactManager.scala:102)
+	at org.apache.spark.sql.artifact.ArtifactManager.withResources(ArtifactManager.scala:111)
+	at org.apache.spark.sql.execution.SQLExecution$.$anonfun$withNewExecutionId0$6(SQLExecution.scala:139)
+	at org.apache.spark.sql.execution.SQLExecution$.withSQLConfPropagated(SQLExecution.scala:308)
+	at org.apache.spark.sql.execution.SQLExecution$.$anonfun$withNewExecutionId0$1(SQLExecution.scala:138)
+	at org.apache.spark.sql.SparkSession.withActive(SparkSession.scala:804)
+	at org.apache.spark.sql.execution.SQLExecution$.withNewExecutionId0(SQLExecution.scala:92)
+	at org.apache.spark.sql.execution.SQLExecution$.withNewExecutionId(SQLExecution.scala:250)
+	at org.apache.spark.sql.execution.QueryExecution.$anonfun$eagerlyExecuteCommands$1(QueryExecution.scala:185)
+	at org.apache.spark.sql.execution.QueryExecution$.withInternalError(QueryExecution.scala:717)
+	at org.apache.spark.sql.execution.QueryExecution.org$apache$spark$sql$execution$QueryExecution$$eagerlyExecute$1(QueryExecution.scala:184)
+	at org.apache.spark.sql.execution.QueryExecution$$anonfun$eagerlyExecuteCommands$3.applyOrElse(QueryExecution.scala:201)
+	at org.apache.spark.sql.execution.QueryExecution$$anonfun$eagerlyExecuteCommands$3.applyOrElse(QueryExecution.scala:194)
+	at org.apache.spark.sql.catalyst.trees.TreeNode.$anonfun$transformDownWithPruning$1(TreeNode.scala:491)
+	at org.apache.spark.sql.catalyst.trees.CurrentOrigin$.withOrigin(origin.scala:107)
+	at org.apache.spark.sql.catalyst.trees.TreeNode.transformDownWithPruning(TreeNode.scala:491)
+	at org.apache.spark.sql.catalyst.plans.logical.LogicalPlan.org$apache$spark$sql$catalyst$plans$logical$AnalysisHelper$$super$transformDownWithPruning(LogicalPlan.scala:37)
+	at org.apache.spark.sql.catalyst.plans.logical.AnalysisHelper.transformDownWithPruning(AnalysisHelper.scala:360)
+	at org.apache.spark.sql.catalyst.plans.logical.AnalysisHelper.transformDownWithPruning$(AnalysisHelper.scala:356)
+	at org.apache.spark.sql.catalyst.plans.logical.LogicalPlan.transformDownWithPruning(LogicalPlan.scala:37)
+	at org.apache.spark.sql.catalyst.plans.logical.LogicalPlan.transformDownWithPruning(LogicalPlan.scala:37)
+	at org.apache.spark.sql.catalyst.trees.TreeNode.transformDown(TreeNode.scala:467)
+	at org.apache.spark.sql.execution.QueryExecution.eagerlyExecuteCommands(QueryExecution.scala:194)
+	at org.apache.spark.sql.execution.QueryExecution.$anonfun$lazyCommandExecuted$1(QueryExecution.scala:155)
+	at scala.util.Try$.apply(Try.scala:217)
+	at org.apache.spark.util.Utils$.doTryWithCallerStacktrace(Utils.scala:1392)
+	at org.apache.spark.util.Utils$.getTryWithCallerStacktrace(Utils.scala:1453)
+	at org.apache.spark.util.LazyTry.get(LazyTry.scala:58)
+	at org.apache.spark.sql.execution.QueryExecution.commandExecuted(QueryExecution.scala:160)
+	at org.apache.spark.sql.execution.QueryExecution.assertCommandExecuted(QueryExecution.scala:239)
+	at org.apache.spark.sql.connect.execution.SparkConnectPlanExecution.handlePlan(SparkConnectPlanExecution.scala:93)
+	at org.apache.spark.sql.connect.execution.ExecuteThreadRunner.$anonfun$executeInternal$1(ExecuteThreadRunner.scala:225)
+	at org.apache.spark.sql.connect.execution.ExecuteThreadRunner.$anonfun$executeInternal$1$adapted(ExecuteThreadRunner.scala:197)
+	at org.apache.spark.sql.connect.service.SessionHolder.$anonfun$withSession$2(SessionHolder.scala:396)
+	at org.apache.spark.sql.SparkSession.withActive(SparkSession.scala:804)
+	at org.apache.spark.sql.connect.service.SessionHolder.$anonfun$withSession$1(SessionHolder.scala:396)
+	at org.apache.spark.JobArtifactSet$.withActiveJobArtifactState(JobArtifactSet.scala:94)
+	at org.apache.spark.sql.artifact.ArtifactManager.$anonfun$withResources$1(ArtifactManager.scala:112)
+	at org.apache.spark.util.Utils$.withContextClassLoader(Utils.scala:185)
+	at org.apache.spark.sql.artifact.ArtifactManager.withClassLoaderIfNeeded(ArtifactManager.scala:102)
+	at org.apache.spark.sql.artifact.ArtifactManager.withResources(ArtifactManager.scala:111)
+	at org.apache.spark.sql.connect.service.SessionHolder.withSession(SessionHolder.scala:395)
+	at org.apache.spark.sql.connect.execution.ExecuteThreadRunner.executeInternal(ExecuteThreadRunner.scala:197)
+	at org.apache.spark.sql.connect.execution.ExecuteThreadRunner.org$apache$spark$sql$connect$execution$ExecuteThreadRunner$$execute(ExecuteThreadRunner.scala:126)
+	at org.apache.spark.sql.connect.execution.ExecuteThreadRunner$ExecutionThread.run(ExecuteThreadRunner.scala:334)
+
+Stack Trace:
+  File "/usr/local/lib/python3.10/dist-packages/dagster/_core/execution/plan/utils.py", line 57, in op_execution_error_boundary
+    yield
+  File "/usr/local/lib/python3.10/dist-packages/dagster/_utils/__init__.py", line 394, in iterate_with_context
+    next_output = next(iterator)
+  File "/usr/local/lib/python3.10/dist-packages/dagster/_core/execution/plan/compute_generator.py", line 135, in _coerce_op_compute_fn_to_iterator
+    result = invoke_compute_fn(
+  File "/usr/local/lib/python3.10/dist-packages/dagster/_core/execution/plan/compute_generator.py", line 115, in invoke_compute_fn
+    return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
+  File "/workspace/dagster/repo.py", line 17, in raw_elements_table
+    df.write.format("delta").mode("overwrite").saveAsTable("unity.default.raw_elements")
+  File "/usr/local/lib/python3.10/dist-packages/pyspark/sql/connect/readwriter.py", line 713, in saveAsTable
+    _, _, ei = self._spark.client.execute_command(
+  File "/usr/local/lib/python3.10/dist-packages/pyspark/sql/connect/client/core.py", line 1195, in execute_command
+    data, _, metrics, observed_metrics, properties = self._execute_and_fetch(
+  File "/usr/local/lib/python3.10/dist-packages/pyspark/sql/connect/client/core.py", line 1697, in _execute_and_fetch
+    for response in self._execute_and_fetch_as_iterator(
+  File "/usr/local/lib/python3.10/dist-packages/pyspark/sql/connect/client/core.py", line 1674, in _execute_and_fetch_as_iterator
+    self._handle_error(error)
+  File "/usr/local/lib/python3.10/dist-packages/pyspark/sql/connect/client/core.py", line 1982, in _handle_error
+    self._handle_rpc_error(error)
+  File "/usr/local/lib/python3.10/dist-packages/pyspark/sql/connect/client/core.py", line 2066, in _handle_rpc_error
+    raise convert_exception(
+[0m

@@ -28,3 +28,6 @@ RUN pip3 install --no-cache-dir ipykernel
 
 # Provide pyspark module for notebook kernels running in the container.
 RUN pip3 install --no-cache-dir pyspark==4.1.1
+
+# Install pandas and pyarrow for Spark Connect, plus Dagster
+RUN pip3 install --no-cache-dir pandas pyarrow grpcio grpcio-status zstandard dagster dagster-webserver
