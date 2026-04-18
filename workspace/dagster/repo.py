@@ -1,5 +1,7 @@
 from dagster import asset, Definitions, define_asset_job, ScheduleDefinition
+from dagstermill import define_dagstermill_asset, local_output_notebook_io_manager
 from pyspark.sql import SparkSession
+
 
 @asset
 def my_first_spark_asset():
@@ -11,6 +13,7 @@ def my_first_spark_asset():
     catalogs = spark.sql("SHOW CATALOGS").collect()
 
     return [row.catalog for row in catalogs]
+
 
 @asset
 def raw_elements_table():
@@ -70,8 +73,34 @@ elements_schedule = ScheduleDefinition(
     cron_schedule="0 0 * * *",
 )
 
+# Define an asset from a Jupyter Notebook using dagstermill
+notebook_asset = define_dagstermill_asset(
+    name="my_notebook_job",
+    notebook_path="/workspace/notebooks/my_notebook_job.ipynb",
+    save_notebook_on_failure=True,
+)
+
+# Define a job for the notebook
+notebook_job = define_asset_job(
+    name="process_notebook_job", selection="my_notebook_job"
+)
+
+# Define a schedule for the notebook job
+notebook_schedule = ScheduleDefinition(
+    job=notebook_job,
+    cron_schedule="0 1 * * *",
+)
+
 defs = Definitions(
-    assets=[my_first_spark_asset, raw_elements_table, summarized_elements_table],
-    schedules=[elements_schedule],
-    jobs=[elements_job],
+    assets=[
+        my_first_spark_asset,
+        raw_elements_table,
+        summarized_elements_table,
+        notebook_asset,
+    ],
+    schedules=[elements_schedule, notebook_schedule],
+    jobs=[elements_job, notebook_job],
+    resources={
+        "output_notebook_io_manager": local_output_notebook_io_manager,
+    },
 )
