@@ -1,5 +1,11 @@
 telemetry:
   enabled: false
 
-# You can add instance-level configurations here later, such as:
-# run_storage, event_log_storage, schedule_storage, etc.
+storage:
+  postgres:
+    postgres_db:
+      username: dagster
+      password: dagster_password
+      hostname: postgres
+      db_name: dagster
+      port: 5432

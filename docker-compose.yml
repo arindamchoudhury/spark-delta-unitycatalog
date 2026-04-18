@@ -19,6 +19,22 @@ services:
     depends_on:
       - unitycatalog
 
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_USER: dagster
+      POSTGRES_PASSWORD: dagster_password
+      POSTGRES_DB: dagster
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./metadata/postgres:/var/lib/postgresql/data
+    networks:
+      default:
+        aliases:
+          - db
+
   spark:
     build:
       context: .
@@ -47,6 +63,7 @@ services:
     user: "0:0"
     depends_on:
       - spark
+      - postgres
     command: ["dagster", "dev", "-h", "0.0.0.0", "-p", "3001", "-w", "/workspace/dagster/workspace.yaml"]
     ports:
       - "3001:3001"

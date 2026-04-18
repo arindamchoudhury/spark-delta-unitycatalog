@@ -5,6 +5,9 @@ workspace/data/**
 !workspace/data/gutenberg_books/
 !workspace/data/gutenberg_books/**
 
+# Postgres
+metadata/postgres/**
+
 # Dagster Execution Artifacts & DBs
 workspace/dagster/__pycache__/
 workspace/dagster/history/

@@ -30,7 +30,7 @@ RUN pip3 install --no-cache-dir ipykernel
 RUN pip3 install --no-cache-dir pyspark==4.1.1
 
 # Install pandas and pyarrow for Spark Connect, plus Dagster
-RUN pip3 install --no-cache-dir pandas pyarrow grpcio grpcio-status zstandard dagster dagster-webserver dagstermill papermill
+RUN pip3 install --no-cache-dir pandas pyarrow grpcio grpcio-status zstandard dagster dagster-webserver dagstermill papermill dagster-postgres psycopg2-binary
 
 # Install the IPython kernel globally so Dagstermill/Papermill can find "python3"
 RUN python3 -m ipykernel install --name python3 --display-name "Python 3"
