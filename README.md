@@ -112,6 +112,20 @@ docker compose up -d unitycatalog
 
 If STS credentials expire, repeat the steps above and restart Unity Catalog.
 
+For one-command rotation, use:
+
+```bash
+python3 scripts/rotate_uc_sts.py
+```
+
+Useful options:
+
+```bash
+python3 scripts/rotate_uc_sts.py --no-restart
+python3 scripts/rotate_uc_sts.py --no-validate
+python3 scripts/rotate_uc_sts.py --duration-seconds 7200 --bucket warehouse
+```
+
 ## Run Spark SQL against Unity Catalog
 
 ```bash
