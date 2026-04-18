@@ -27,10 +27,10 @@ def raw_elements_table():
     )
 
     # Write to Unity Catalog as an EXTERNAL Delta table
-    # The OSS Unity Catalog right now requires passing a LOCATION for tables if managed isn't enabled
     spark.sql("DROP TABLE IF EXISTS unity.default.raw_elements")
-    df.write.format("delta").option("path", "/tmp/uc/raw_elements").saveAsTable(
-        "unity.default.raw_elements"
+    df.write.format("delta").save("s3a://warehouse/raw_elements")
+    spark.sql(
+        "CREATE EXTERNAL TABLE IF NOT EXISTS unity.default.raw_elements USING DELTA LOCATION 's3a://warehouse/raw_elements'"
     )
 
     return [
@@ -54,9 +54,10 @@ def summarized_elements_table():
 
     # Save the summarized data as a new table
     spark.sql("DROP TABLE IF EXISTS unity.default.elements_summary")
-    summary_df.write.format("delta").option(
-        "path", "/tmp/uc/elements_summary"
-    ).saveAsTable("unity.default.elements_summary")
+    summary_df.write.format("delta").save("s3a://warehouse/elements_summary")
+    spark.sql(
+        "CREATE EXTERNAL TABLE IF NOT EXISTS unity.default.elements_summary USING DELTA LOCATION 's3a://warehouse/elements_summary'"
+    )
 
     return [
         row

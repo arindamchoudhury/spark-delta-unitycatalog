@@ -8,10 +8,5 @@ workspace/data/**
 # Postgres
 metadata/postgres/**
 
-# Dagster Execution Artifacts & DBs
-workspace/dagster/__pycache__/
-workspace/dagster/history/
-workspace/dagster/storage/
-workspace/dagster/logs/
-workspace/dagster/.telemetry/
-workspace/dagster/.nux/
+# MinIO / S3
+metadata/minio/**

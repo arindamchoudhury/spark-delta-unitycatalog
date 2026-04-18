@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS unity.default.smoke_delta (
 	note STRING
 )
 USING DELTA
-LOCATION '/tmp/uc/smoke_delta';
+LOCATION 's3a://warehouse/smoke_delta';
 
 DELETE FROM unity.default.smoke_delta;
 

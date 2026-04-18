@@ -26,10 +26,12 @@ The environment currently contains the following core pillars of a modern data s
 
 While the current setup is excellent for learning and developing PySpark/Delta workloads locally, the following additions would make it a "perfect" replica of a hyperscale cloud data stack.
 
-### 2.1 Object Storage Layer (MinIO / S3 Simulation)
-*   **Current State:** Delta tables are written directly to local disk via a Docker volume mount (`/tmp/uc`).
-*   **The Improvement:** Add **MinIO**, an S3-compatible object storage server, to the `docker-compose.yml`. Configure Unity Catalog and Spark to read/write using `s3a://` URI paths instead of local file paths.
-*   **Why do it?** In enterprise environments, data lakes are always built on blob storage (AWS S3, Azure ADLS Gen2, Google Cloud Storage). Learning to configure Hadoop/Spark AWS SDK packages and authenticating with S3 credentials locally is an invaluable, real-world skill.
+### 2.1 Object Storage Layer (MinIO / S3 Simulation) (IN PROGRESS)
+*   **Current State:** MinIO containers are successfully added to `docker-compose.yml`, and `spark-defaults.conf` has been updated with the `hadoop-aws` dependencies and configuration values.
+*   **Next Steps to Complete:** 
+    1. The AWS SDK/Hadoop compatibility needs to be fully resolved. Spark 4.1.1's default classloader paths and Hadoop 3.4.x's shift to AWS SDK v2 has created `NoClassDefFoundError` conflicts when trying to write to `s3a://` paths.
+    2. Once basic Spark-to-MinIO writing is verified via the `spark-shell`, Unity Catalog needs to be configured with the S3 external location (`http://unitycatalog:8080/api/2.1/unity-catalog/volumes`). 
+    3. Dagster assets (`raw_elements` and `elements_summary`) need to successfully execute and write their Delta logs over S3.
 
 ### 2.2 Interactive Notebook Server (JupyterLab)
 *   **Current State:** Notebooks are scheduled in the background via Papermill, but must be authored in an external IDE (like VS Code).

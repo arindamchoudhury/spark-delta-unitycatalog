@@ -19,6 +19,36 @@ services:
     depends_on:
       - unitycatalog
 
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password
+    command: server /data --console-address ":9001"
+    volumes:
+      - ./metadata/minio:/data
+    networks:
+      default:
+        aliases:
+          - s3
+
+  minio-setup:
+    image: minio/mc:latest
+    container_name: minio-setup
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set myminio http://minio:9000 admin password;
+      mc mb myminio/warehouse;
+      exit 0;
+      "
+
   postgres:
     image: postgres:15
     container_name: postgres
@@ -44,6 +74,7 @@ services:
     user: "0:0"
     depends_on:
       - unitycatalog
+      - minio
     command: ["bash", "-lc", "/opt/spark/sbin/start-connect-server.sh && sleep infinity"]
     ports:
       - "4040:4040"
