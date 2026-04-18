@@ -1,0 +1,5 @@
+telemetry:
+  enabled: false
+
+# You can add instance-level configurations here later, such as:
+# run_storage, event_log_storage, schedule_storage, etc.
