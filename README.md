@@ -28,6 +28,8 @@ docker compose up -d
 The Unity Catalog UI is available at `http://localhost:3000`.
 Spark UI is exposed on `http://localhost:4040` while a Spark application is running
 (Spark may move to `4041`/`4042` if those ports are already in use).
+Spark History Server is exposed on `http://localhost:18080` and shows completed
+applications from persisted event logs.
 
 ## Validate Unity Catalog is reachable
 
@@ -134,6 +136,19 @@ docker compose exec spark /opt/spark/bin/spark-sql -f /opt/spark/scripts/smoke-t
 
 The SQL file is mounted from `./scripts/smoke-test.sql` and checks that Spark
 can list and query Unity Catalog tables.
+
+## Spark History Server
+
+This stack enables Spark event logging and runs a dedicated History Server:
+
+- Event logs are written to `./metadata/spark-events`.
+- History UI is available at `http://localhost:18080`.
+
+To verify completed applications are visible:
+
+```bash
+curl -sS http://localhost:18080/api/v1/applications
+```
 
 If you get image build download errors, re-run once network access is available.
 The Spark image now bakes in the S3A/Hadoop AWS jars, Unity Catalog connector jars,

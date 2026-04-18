@@ -22,9 +22,9 @@ The environment currently contains the following core pillars of a modern data s
 
 ---
 
-## 2. Potential Architectural Improvements
+## 2. Architecture Roadmap and Enhancements
 
-While the current setup is excellent for learning and developing PySpark/Delta workloads locally, the following additions would make it a "perfect" replica of a hyperscale cloud data stack.
+The current setup is already strong for local PySpark/Delta development. This section tracks what is complete and what can still be added for a closer hyperscale-cloud operating model.
 
 ### 2.1 Object Storage Layer (MinIO / S3 Simulation) (COMPLETED BASELINE)
 *   **Current State:** MinIO is fully integrated for local S3-compatible storage, and Spark + Delta + Unity Catalog are operating end-to-end against `s3://warehouse`.
@@ -35,6 +35,7 @@ While the current setup is excellent for learning and developing PySpark/Delta w
 *   **Operational Notes:**
     1. STS credentials are temporary and must be rotated before expiration.
     2. If Unity Catalog metadata is reset, recreate catalog `unity` and schema `default` before running smoke tests.
+    3. Rotation is automated by `scripts/rotate_uc_sts.py`, which can mint STS credentials, update UC config, validate access, and restart the UC service.
 
 ### 2.2 Interactive Notebook Server (JupyterLab)
 *   **Current State:** Notebooks are scheduled in the background via Papermill, but must be authored in an external IDE (like VS Code).
@@ -42,6 +43,21 @@ While the current setup is excellent for learning and developing PySpark/Delta w
 *   **Why do it?** It provides a persistent, dedicated web UI for interactive data exploration, visualization, and rapid prototyping against the Unity Catalog before converting code into Dagster assets.
 
 ### 2.3 Spark History Server
-*   **Current State:** The live Spark UI is available on port `4040` only while a job is actively running. Once the Dagster job finishes, the Spark container UI stops serving that job's statistics.
+*   **Current State:** Live Spark UI ports (`4040`/`4041`/`4042`) are application-scoped and ephemeral. If one Spark app already occupies `4040`, the next app attempts `4041`; ports close when those apps finish.
 *   **The Improvement:** Configure Spark to log events to a mounted directory (`spark.eventLog.enabled=true`) and spin up a separate **Spark History Server** container to serve the UI for completed jobs.
 *   **Why do it?** Crucial for debugging performance bottlenecks, analyzing DAG execution plans, and understanding memory spillage on jobs that have already finished running.
+*   **Implementation Notes (Suggested):**
+    1. Enable event logging in Spark config:
+       - `spark.eventLog.enabled=true`
+       - `spark.eventLog.dir=file:/tmp/spark-events`
+    2. Add a host bind mount for persistent event logs (for example `./metadata/spark-events:/tmp/spark-events`) to the `spark` service.
+    3. Add a `spark-history` service in `docker-compose.yml` using the same Spark image and start command:
+       - `/opt/spark/sbin/start-history-server.sh`
+       - `SPARK_HISTORY_OPTS=-Dspark.history.fs.logDirectory=file:/tmp/spark-events`
+       - publish port `18080:18080`
+       - mount the same `./metadata/spark-events` path.
+    4. Keep this service independent from active apps so UI remains available even after jobs complete.
+*   **Validation Steps:**
+    1. Run a Spark job (for example the smoke test) so event logs are written.
+    2. Open `http://localhost:18080` and verify the completed application is listed.
+    3. Confirm you can open SQL, stages, and executor tabs after the app exits.
