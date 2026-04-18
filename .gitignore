@@ -18,3 +18,7 @@ workspace/dagster/__pycache__/
 workspace/dagster/history/
 workspace/dagster/storage/
 bundle-*.jar
+
+# Unity Catalog config directory (keep only the static server properties file)
+uc-conf/*
+!uc-conf/server.properties

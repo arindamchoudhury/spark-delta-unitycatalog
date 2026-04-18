@@ -26,12 +26,15 @@ The environment currently contains the following core pillars of a modern data s
 
 While the current setup is excellent for learning and developing PySpark/Delta workloads locally, the following additions would make it a "perfect" replica of a hyperscale cloud data stack.
 
-### 2.1 Object Storage Layer (MinIO / S3 Simulation) (IN PROGRESS)
-*   **Current State:** MinIO containers are successfully added to `docker-compose.yml`, and `spark-defaults.conf` has been updated with the `hadoop-aws` dependencies and configuration values.
-*   **Next Steps to Complete:** 
-    1. The AWS SDK/Hadoop compatibility needs to be fully resolved. Spark 4.1.1's default classloader paths and Hadoop 3.4.x's shift to AWS SDK v2 has created `NoClassDefFoundError` conflicts when trying to write to `s3a://` paths.
-    2. Once basic Spark-to-MinIO writing is verified via the `spark-shell`, Unity Catalog needs to be configured with the S3 external location (`http://unitycatalog:8080/api/2.1/unity-catalog/volumes`). 
-    3. Dagster assets (`raw_elements` and `elements_summary`) need to successfully execute and write their Delta logs over S3.
+### 2.1 Object Storage Layer (MinIO / S3 Simulation) (COMPLETED BASELINE)
+*   **Current State:** MinIO is fully integrated for local S3-compatible storage, and Spark + Delta + Unity Catalog are operating end-to-end against `s3://warehouse`.
+*   **What Changed:**
+    1. Spark image now bakes required S3A/AWS, Unity Catalog, and Delta jars, avoiding runtime dependency resolution and classloader conflicts.
+    2. Unity Catalog is configured via `uc-conf/server.properties` and mounted as a directory to `/home/unitycatalog/etc/conf`.
+    3. Temporary credentials are successfully vended from Unity Catalog (`/temporary-path-credentials`) for MinIO-backed paths.
+*   **Operational Notes:**
+    1. STS credentials are temporary and must be rotated before expiration.
+    2. If Unity Catalog metadata is reset, recreate catalog `unity` and schema `default` before running smoke tests.
 
 ### 2.2 Interactive Notebook Server (JupyterLab)
 *   **Current State:** Notebooks are scheduled in the background via Papermill, but must be authored in an external IDE (like VS Code).

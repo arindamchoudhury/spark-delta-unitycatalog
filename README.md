@@ -17,7 +17,7 @@ disk even if you remove containers or rebuild the stack.
 
 - Docker Desktop or Docker Engine with Compose v2
 - The local Hadoop archive must exist at `./spark/tar/hadoop-3.4.3.tar.gz`
-- Internet access on first Spark SQL run if Maven packages are not already cached in `./metadata/ivy`
+- Internet access on first Spark image build (to download baked dependency jars)
 
 ## Start the stack
 
@@ -37,6 +37,81 @@ curl http://localhost:8080/api/2.1/unity-catalog/catalogs
 
 You should see JSON output listing catalogs (for example, `unity`).
 
+## Unity Catalog server configuration
+
+Unity Catalog now loads configuration from `./uc-conf/server.properties` via a
+directory mount to `/home/unitycatalog/etc/conf`.
+
+Notes:
+
+- Keep `uc-conf/server.properties` as the source-of-truth config file.
+- Unity Catalog generates key/token artifacts in the same directory at runtime;
+	these generated files are ignored by git.
+- If you use temporary STS credentials for MinIO, rotate
+	`s3.accessKey.0`, `s3.secretKey.0`, and `s3.sessionToken.0` before expiry.
+
+If you need to inspect credential vending directly:
+
+```bash
+curl -sS -X POST http://localhost:8080/api/2.1/unity-catalog/temporary-path-credentials \
+	-H 'Content-Type: application/json' \
+	-d '{"url":"s3://warehouse/smoke_delta","operation":"PATH_CREATE_TABLE"}'
+```
+
+### Generate and apply MinIO STS credentials
+
+Use AWS CLI against MinIO STS to mint temporary credentials, then write them to
+`uc-conf/server.properties`.
+
+1. Export the long-lived MinIO user credentials:
+
+```bash
+export AWS_ACCESS_KEY_ID=admin
+export AWS_SECRET_ACCESS_KEY=password
+export AWS_DEFAULT_REGION=us-east-1
+```
+
+2. Request temporary STS credentials:
+
+```bash
+aws --endpoint-url http://localhost:9000 sts assume-role \
+	--role-arn arn:aws:iam::minio:user/admin \
+	--role-session-name uc-session-$(date +%s) \
+	--duration-seconds 3600 \
+	--output json > /tmp/minio-sts.json
+```
+
+3. Extract values (for update + validation):
+
+```bash
+ACCESS_KEY=$(python3 -c "import json;print(json.load(open('/tmp/minio-sts.json'))['Credentials']['AccessKeyId'])")
+SECRET_KEY=$(python3 -c "import json;print(json.load(open('/tmp/minio-sts.json'))['Credentials']['SecretAccessKey'])")
+SESSION_TOKEN=$(python3 -c "import json;print(json.load(open('/tmp/minio-sts.json'))['Credentials']['SessionToken'])")
+EXPIRES_AT=$(python3 -c "import json;print(json.load(open('/tmp/minio-sts.json'))['Credentials']['Expiration'])")
+echo "STS expires at: $EXPIRES_AT"
+```
+
+4. Validate credentials can access MinIO:
+
+```bash
+AWS_ACCESS_KEY_ID="$ACCESS_KEY" \
+AWS_SECRET_ACCESS_KEY="$SECRET_KEY" \
+AWS_SESSION_TOKEN="$SESSION_TOKEN" \
+aws --endpoint-url http://localhost:9000 s3 ls s3://warehouse
+```
+
+5. Update these keys in `uc-conf/server.properties`, then restart Unity Catalog:
+
+- `s3.accessKey.0`
+- `s3.secretKey.0`
+- `s3.sessionToken.0`
+
+```bash
+docker compose up -d unitycatalog
+```
+
+If STS credentials expire, repeat the steps above and restart Unity Catalog.
+
 ## Run Spark SQL against Unity Catalog
 
 ```bash
@@ -46,9 +121,9 @@ docker compose exec spark /opt/spark/bin/spark-sql -f /opt/spark/scripts/smoke-t
 The SQL file is mounted from `./scripts/smoke-test.sql` and checks that Spark
 can list and query Unity Catalog tables.
 
-If you get package download errors, re-run once network access is available.
-On first run, Spark downloads dependency jars; after that they are reused from
-the persistent host directory `./metadata/ivy`.
+If you get image build download errors, re-run once network access is available.
+The Spark image now bakes in the S3A/Hadoop AWS jars, Unity Catalog connector jars,
+and Delta Lake jars so Spark SQL does not need runtime Maven resolution.
 
 ## Hadoop native library support
 
@@ -57,7 +132,7 @@ The Spark image in `spark/Dockerfile` includes Hadoop native binaries under
 and exports `LD_LIBRARY_PATH` so Hadoop can load
 `libhadoop.so`.
 
-If you changed the Dockerfile, rebuild the `spark` image:
+If you changed the Dockerfile or any baked-in dependency versions, rebuild the `spark` image:
 
 ```bash
 docker compose build spark
@@ -111,6 +186,18 @@ docker compose stop
 
 If you want to fully reset the local catalog and Spark cache, delete the host
 folders under `./metadata/uc` and `./metadata/ivy`.
+
+After a full reset, if catalogs are empty, create the default namespace objects:
+
+```bash
+curl -sS -X POST http://localhost:8080/api/2.1/unity-catalog/catalogs \
+	-H 'Content-Type: application/json' \
+	-d '{"name":"unity","comment":"Local default catalog","storage_root":"s3://warehouse"}'
+
+curl -sS -X POST http://localhost:8080/api/2.1/unity-catalog/schemas \
+	-H 'Content-Type: application/json' \
+	-d '{"name":"default","catalog_name":"unity","comment":"Default schema"}'
+```
 
 ## Work with the stack from VS Code
 
