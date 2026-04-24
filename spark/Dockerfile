@@ -50,7 +50,7 @@ RUN pip3 install --no-cache-dir ipykernel
 RUN pip3 install --no-cache-dir pyspark==4.1.1
 
 # Install pandas and pyarrow for Spark Connect, plus Dagster, plus AWS CLI for STS rotation
-RUN pip3 install --no-cache-dir pandas pyarrow grpcio grpcio-status zstandard dagster dagster-webserver dagstermill papermill dagster-postgres psycopg2-binary awscli dagster-dg dagster-components uv
+RUN pip3 install --no-cache-dir pandas pyarrow grpcio grpcio-status zstandard dagster==1.13.2 dagster-webserver==1.13.2 dagstermill==0.29.2 papermill dagster-postgres==0.29.2 psycopg2-binary awscli uv
 
 # Install the IPython kernel globally so Dagstermill/Papermill can find "python3"
 RUN python3 -m ipykernel install --name python3 --display-name "Python 3"
