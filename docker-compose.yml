@@ -165,7 +165,7 @@ services:
       postgres:
         condition: service_healthy
     working_dir: /workspace/dagster
-    command: ["dg", "dev", "-h", "0.0.0.0", "-p", "3001", "--no-check-yaml"]
+    command: ["bash", "-lc", "uv sync && dg(){ uv run dagster \"$@\"; }; dg dev -h 0.0.0.0 -p 3001"]
     ports:
       - "3001:3001"
     healthcheck:

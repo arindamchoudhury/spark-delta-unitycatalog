@@ -2,14 +2,10 @@
 name = "dagster-workspace"
 version = "0.1.0"
 requires-python = ">=3.10"
-
-[tool.dg]
-directory_type = "project"
-
-[tool.dg.project]
-root_module = "repo"
-code_location_target_module = "repo"
-
-[tool.dg.cli]
-use_dg_managed_environment = false
-require_local_venv = false
+dependencies = [
+	"dagster==1.13.2",
+	"dagster-webserver==1.13.2",
+	"dagster-postgres==0.29.2",
+	"dagstermill==0.29.2",
+	"pyspark==4.1.1",
+]

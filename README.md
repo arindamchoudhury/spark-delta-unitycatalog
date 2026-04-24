@@ -267,7 +267,7 @@ curl -sS -X POST http://localhost:8080/api/2.1/unity-catalog/schemas \
 - `unitycatalog`: The open source Unity Catalog server running on port `8080`.
 - `ui`: The Unity Catalog UI running on port `3000`.
 - `spark`: The PySpark 4.1.1 execution environment running a Spark Connect server on port `15002`.
-- `dagster`: A modern data orchestrator running on port `3001` that schedules and manages data pipelines. It starts with `dg dev` from `workspace/dagster`.
+- `dagster`: A modern data orchestrator running on port `3001` that schedules and manages data pipelines. It starts with `dg dev` from `workspace/dagster` (backed by `uv run dagster`).
 
 ## Orchestration (Dagster & Spark Connect)
 
@@ -277,8 +277,9 @@ This project uses **Dagster** to schedule and orchestrate Spark jobs. Instead of
 2. **Spark Container:** Runs a dedicated Spark Connect server (`/opt/spark/sbin/start-connect-server.sh`).
 3. **Execution:** Dagster initializes a remote SparkSession (`SparkSession.builder.remote("sc://spark:15002").getOrCreate()`). The Python client logic executes in the `dagster` container, but all JVM data processing and Unity Catalog interactions are remotely pushed to the `spark` container.
 
-The Dagster service is configured as a `dg` project via `workspace/dagster/pyproject.toml`.
-Because this repo still uses a classic `repo.py` code location instead of the newer
-component layout, the compose command starts Dagster with `--no-check-yaml`.
+The Dagster service is configured as a plain Python project via `workspace/dagster/pyproject.toml`.
+Compose now syncs a local `workspace/dagster/.venv` with the pinned Dagster project
+dependencies before starting `dg dev` (backed by `uv run dagster`), and the code location loads from the
+`dagster_workspace` package.
 
 To use the Dagster UI, visit `http://localhost:3001`.

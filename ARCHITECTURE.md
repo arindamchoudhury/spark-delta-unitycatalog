@@ -39,11 +39,12 @@ The current setup is already strong for local PySpark/Delta development. This se
     3. `scripts/rotate_uc_sts.py` remains the underlying rotation entrypoint and can still be run manually when the stack is already up.
 
 ### 2.1.1 Dagster Development Runtime
-*   **Current State:** The `dagster` service now starts through the newer `dg` CLI from `workspace/dagster` and exposes the Dagster UI on port `3001`.
+*   **Current State:** The `dagster` service starts from the local `uv` environment in `workspace/dagster` and exposes the Dagster UI on port `3001`.
 *   **Implementation Notes:**
-    1. `workspace/dagster/pyproject.toml` declares the directory as a `dg` project and points the code location at the existing `repo.py` module.
-    2. The service uses the ambient container Python environment rather than a separately managed project environment.
-    3. Compose starts Dagster with `--no-check-yaml` because this repository uses a classic `repo.py` layout rather than the `defs/` component structure expected by `dg`'s YAML/component scan.
+    1. `workspace/dagster/pyproject.toml` declares a plain Python project whose code location root is `dagster_workspace`.
+    2. The Dagster definitions live in the native package layout under `workspace/dagster/dagster_workspace/definitions.py` and `workspace/dagster/dagster_workspace/defs/`.
+    3. Compose runs `uv sync` before `dg dev` (implemented as a lightweight shim to `uv run dagster dev`), so the service uses a pinned local `.venv` rather than the ambient container packages.
+    4. The local project environment pins Dagster `1.13.2` with companion libraries on the `0.29.2` line and no longer depends on the older `dagster-components` compatibility path.
 
 ### 2.2 Interactive Notebook Server (JupyterLab)
 *   **Current State:** Notebooks are scheduled in the background via Papermill, but must be authored in an external IDE (like VS Code).
