@@ -32,10 +32,18 @@ The current setup is already strong for local PySpark/Delta development. This se
     1. Spark image now bakes required S3A/AWS, Unity Catalog, and Delta jars, avoiding runtime dependency resolution and classloader conflicts.
     2. Unity Catalog is configured via `uc-conf/server.properties` and mounted as a directory to `/home/unitycatalog/etc/conf`.
     3. Temporary credentials are successfully vended from Unity Catalog (`/temporary-path-credentials`) for MinIO-backed paths.
+    4. Docker Compose now runs a one-shot `uc-rotate` service before `unitycatalog`, so fresh MinIO STS credentials are written into `uc-conf/server.properties` during stack startup.
 *   **Operational Notes:**
-    1. STS credentials are temporary and must be rotated before expiration.
+    1. STS credentials are temporary, but compose startup now rotates them automatically before Unity Catalog comes up.
     2. If Unity Catalog metadata is reset, recreate catalog `unity` and schema `default` before running smoke tests.
-    3. Rotation is automated by `scripts/rotate_uc_sts.py`, which can mint STS credentials, update UC config, validate access, and restart the UC service.
+    3. `scripts/rotate_uc_sts.py` remains the underlying rotation entrypoint and can still be run manually when the stack is already up.
+
+### 2.1.1 Dagster Development Runtime
+*   **Current State:** The `dagster` service now starts through the newer `dg` CLI from `workspace/dagster` and exposes the Dagster UI on port `3001`.
+*   **Implementation Notes:**
+    1. `workspace/dagster/pyproject.toml` declares the directory as a `dg` project and points the code location at the existing `repo.py` module.
+    2. The service uses the ambient container Python environment rather than a separately managed project environment.
+    3. Compose starts Dagster with `--no-check-yaml` because this repository uses a classic `repo.py` layout rather than the `defs/` component structure expected by `dg`'s YAML/component scan.
 
 ### 2.2 Interactive Notebook Server (JupyterLab)
 *   **Current State:** Notebooks are scheduled in the background via Papermill, but must be authored in an external IDE (like VS Code).

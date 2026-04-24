@@ -49,8 +49,8 @@ RUN pip3 install --no-cache-dir ipykernel
 # Provide pyspark module for notebook kernels running in the container.
 RUN pip3 install --no-cache-dir pyspark==4.1.1
 
-# Install pandas and pyarrow for Spark Connect, plus Dagster
-RUN pip3 install --no-cache-dir pandas pyarrow grpcio grpcio-status zstandard dagster dagster-webserver dagstermill papermill dagster-postgres psycopg2-binary
+# Install pandas and pyarrow for Spark Connect, plus Dagster, plus AWS CLI for STS rotation
+RUN pip3 install --no-cache-dir pandas pyarrow grpcio grpcio-status zstandard dagster dagster-webserver dagstermill papermill dagster-postgres psycopg2-binary awscli dagster-dg dagster-components uv
 
 # Install the IPython kernel globally so Dagstermill/Papermill can find "python3"
 RUN python3 -m ipykernel install --name python3 --display-name "Python 3"

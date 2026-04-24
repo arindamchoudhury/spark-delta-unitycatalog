@@ -26,10 +26,15 @@ docker compose up -d
 ```
 
 The Unity Catalog UI is available at `http://localhost:3000`.
+Dagster UI is available at `http://localhost:3001`.
 Spark UI is exposed on `http://localhost:4040` while a Spark application is running
 (Spark may move to `4041`/`4042` if those ports are already in use).
 Spark History Server is exposed on `http://localhost:18080` and shows completed
 applications from persisted event logs.
+
+During startup, the one-shot `uc-rotate` service runs `scripts/rotate_uc_sts.py`
+against MinIO, writes fresh STS credentials into `uc-conf/server.properties`, and
+only then allows `unitycatalog` to start.
 
 ## Validate Unity Catalog is reachable
 
@@ -49,8 +54,8 @@ Notes:
 - Keep `uc-conf/server.properties` as the source-of-truth config file.
 - Unity Catalog generates key/token artifacts in the same directory at runtime;
 	these generated files are ignored by git.
-- If you use temporary STS credentials for MinIO, rotate
-	`s3.accessKey.0`, `s3.secretKey.0`, and `s3.sessionToken.0` before expiry.
+- Temporary MinIO STS credentials are rotated automatically during
+	`docker compose up` by the `uc-rotate` service.
 
 If you need to inspect credential vending directly:
 
@@ -60,7 +65,14 @@ curl -sS -X POST http://localhost:8080/api/2.1/unity-catalog/temporary-path-cred
 	-d '{"url":"s3://warehouse/smoke_delta","operation":"PATH_CREATE_TABLE"}'
 ```
 
-### Generate and apply MinIO STS credentials
+### Rotate MinIO STS credentials manually
+
+For normal local startup, no manual action is required. `docker compose up -d`
+already runs `uc-rotate` before Unity Catalog starts.
+
+Use manual rotation only if credentials expire while the stack is already up, or
+if you want to refresh `uc-conf/server.properties` without recreating the whole
+stack.
 
 Use AWS CLI against MinIO STS to mint temporary credentials, then write them to
 `uc-conf/server.properties`.
@@ -112,12 +124,20 @@ aws --endpoint-url http://localhost:9000 s3 ls s3://warehouse
 docker compose up -d unitycatalog
 ```
 
-If STS credentials expire, repeat the steps above and restart Unity Catalog.
+If STS credentials expire while the stack is running, repeat the steps above and
+restart Unity Catalog.
 
 For one-command rotation, use:
 
 ```bash
 python3 scripts/rotate_uc_sts.py
+```
+
+To rerun the same automation through Docker Compose, use:
+
+```bash
+docker compose run --rm uc-rotate
+docker compose up -d unitycatalog
 ```
 
 Useful options:
@@ -243,10 +263,11 @@ curl -sS -X POST http://localhost:8080/api/2.1/unity-catalog/schemas \
 
 ## Services
 
+- `uc-rotate`: A one-shot helper that refreshes MinIO STS credentials in `uc-conf/server.properties` before Unity Catalog starts.
 - `unitycatalog`: The open source Unity Catalog server running on port `8080`.
 - `ui`: The Unity Catalog UI running on port `3000`.
 - `spark`: The PySpark 4.1.1 execution environment running a Spark Connect server on port `15002`.
-- `dagster`: A modern data orchestrator running on port `3001` that schedules and manages data pipelines.
+- `dagster`: A modern data orchestrator running on port `3001` that schedules and manages data pipelines. It starts with `dg dev` from `workspace/dagster`.
 
 ## Orchestration (Dagster & Spark Connect)
 
@@ -255,5 +276,9 @@ This project uses **Dagster** to schedule and orchestrate Spark jobs. Instead of
 1. **Dagster Container:** Runs the orchestration UI and schedules pipeline execution.
 2. **Spark Container:** Runs a dedicated Spark Connect server (`/opt/spark/sbin/start-connect-server.sh`).
 3. **Execution:** Dagster initializes a remote SparkSession (`SparkSession.builder.remote("sc://spark:15002").getOrCreate()`). The Python client logic executes in the `dagster` container, but all JVM data processing and Unity Catalog interactions are remotely pushed to the `spark` container.
+
+The Dagster service is configured as a `dg` project via `workspace/dagster/pyproject.toml`.
+Because this repo still uses a classic `repo.py` code location instead of the newer
+component layout, the compose command starts Dagster with `--no-check-yaml`.
 
 To use the Dagster UI, visit `http://localhost:3001`.

@@ -1,4 +1,22 @@
 services:
+  uc-rotate:
+    image: spark-delta-unitycatalog/spark:4.1.1
+    container_name: uc-rotate
+    depends_on:
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./uc-conf:/uc-conf
+      - ./scripts:/scripts:ro
+    command:
+      - python3
+      - /scripts/rotate_uc_sts.py
+      - --minio-endpoint
+      - http://minio:9000
+      - --config
+      - /uc-conf/server.properties
+      - --no-restart
+
   unitycatalog:
     image: unitycatalog/unitycatalog:v0.4.0
     container_name: unitycatalog
@@ -9,6 +27,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    depends_on:
+      uc-rotate:
+        condition: service_completed_successfully
     volumes:
       - ./metadata/uc:/tmp/uc
       - ./uc-conf:/home/unitycatalog/etc/conf
@@ -143,7 +164,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    command: ["dagster", "dev", "-h", "0.0.0.0", "-p", "3001", "-w", "/workspace/dagster/workspace.yaml"]
+    working_dir: /workspace/dagster
+    command: ["dg", "dev", "-h", "0.0.0.0", "-p", "3001", "--no-check-yaml"]
     ports:
       - "3001:3001"
     healthcheck:
@@ -153,6 +175,7 @@ services:
       retries: 5
     environment:
       - DAGSTER_HOME=/workspace/dagster
+      - UV_SYSTEM_PYTHON=1
     volumes:
       - ./metadata/uc:/tmp/uc
       - ./metadata/ivy:/tmp/.ivy2
