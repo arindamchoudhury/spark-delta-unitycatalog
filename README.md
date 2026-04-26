@@ -31,6 +31,7 @@ Spark UI is exposed on `http://localhost:4040` while a Spark application is runn
 (Spark may move to `4041`/`4042` if those ports are already in use).
 Spark History Server is exposed on `http://localhost:18080` and shows completed
 applications from persisted event logs.
+Dagster gRPC code server runs internally on port `4000`.
 
 During startup, the one-shot `uc-rotate` service runs `scripts/rotate_uc_sts.py`
 against MinIO, writes fresh STS credentials into `uc-conf/server.properties`, and
@@ -260,6 +261,7 @@ curl -sS -X POST http://localhost:8080/api/2.1/unity-catalog/schemas \
 - This setup is for local experimentation, not production.
 - The Spark container runs as root to simplify write access on the shared host directory mounted at `/tmp/uc`.
 - For a production-like setup, replace the shared local path with S3/ADLS/GCS and configure Unity Catalog storage credentials and external locations.
+- Notebooks in `workspace/notebooks/` are git-ignored except for `intro.ipynb`. Other `.ipynb` files can be used locally but are not tracked.
 
 ## Services
 
@@ -267,19 +269,61 @@ curl -sS -X POST http://localhost:8080/api/2.1/unity-catalog/schemas \
 - `unitycatalog`: The open source Unity Catalog server running on port `8080`.
 - `ui`: The Unity Catalog UI running on port `3000`.
 - `spark`: The PySpark 4.1.1 execution environment running a Spark Connect server on port `15002`.
-- `dagster`: A modern data orchestrator running on port `3001` that schedules and manages data pipelines. It starts with `dg dev` from `workspace/dagster` (backed by `uv run dagster`).
+- `spark-history`: Dedicated Spark History Server running on port `18080` for event log visualization.
+- `dagster-webserver`: Dagster web UI running on port `3001` serving the control plane.
+- `dagster-daemon`: Dagster daemon process handling schedules, sensors, and run queue coordination.
+- `dagster-user-code`: Dagster gRPC code server on port `4000` hosting user-defined assets and jobs.
 
 ## Orchestration (Dagster & Spark Connect)
 
-This project uses **Dagster** to schedule and orchestrate Spark jobs. Instead of running heavy JVM PySpark workloads inside the Dagster orchestrator, we employ **Spark Connect** to enforce separation of concerns:
+This project uses **Dagster** to schedule and orchestrate Spark jobs following the OSS Dagster Docker deployment architecture. Instead of running heavy JVM PySpark workloads inside the Dagster orchestrator, we employ **Spark Connect** to enforce separation of concerns:
 
-1. **Dagster Container:** Runs the orchestration UI and schedules pipeline execution.
-2. **Spark Container:** Runs a dedicated Spark Connect server (`/opt/spark/sbin/start-connect-server.sh`).
-3. **Execution:** Dagster initializes a remote SparkSession (`SparkSession.builder.remote("sc://spark:15002").getOrCreate()`). The Python client logic executes in the `dagster` container, but all JVM data processing and Unity Catalog interactions are remotely pushed to the `spark` container.
+### Dagster Architecture
 
-The Dagster service is configured as a plain Python project via `workspace/dagster/pyproject.toml`.
-Compose now syncs a local `workspace/dagster/.venv` with the pinned Dagster project
-dependencies before starting `dg dev` (backed by `uv run dagster`), and the code location loads from the
-`dagster_workspace` package.
+The Dagster deployment is split into three long-running services aligned with Dagster OSS best practices:
+
+1. **Webserver** (`dagster-webserver`): Serves the UI and GraphQL API on port `3001`.
+   - Loads code locations from the gRPC code server.
+   - Receives runs submitted by users.
+
+2. **Daemon** (`dagster-daemon`): Processes schedules, sensors, and the run queue.
+   - Dequeues runs from Postgres and launches them via DockerRunLauncher.
+   - Can access Docker socket to spawn isolated run containers.
+   - Mounts host Docker socket: `/var/run/docker.sock:/var/run/docker.sock`.
+
+3. **User Code Server** (`dagster-user-code`): gRPC server on port `4000` hosting asset definitions.
+   - Runs the `dagster_workspace` package containing assets, jobs, and schedules.
+   - Accessible over the network to webserver and daemon.
+
+### Run Execution
+
+- **Queued coordinator** is enabled in `workspace/dagster/dagster.yaml`:
+  - Runs submitted from the UI are enqueued in Postgres.
+  - Daemon dequeues and launches them.
+
+- **DockerRunLauncher** is configured:
+  - Each submitted run spawns a dedicated ephemeral container using the `dagster-user-code` image.
+  - Run containers share the Spark, MinIO, and Unity Catalog access paths via bind mounts.
+  - Logs are persisted in Postgres for UI inspection.
+
+### Asset Execution
+
+When assets materialize (via schedule or manual trigger):
+
+1. Daemon dequeues the run.
+2. Daemon launches a run container with `dagster_workspace.definitions`.
+3. Asset code executes in the run container.
+4. Asset code initializes a remote Spark session: `SparkSession.builder.remote("sc://spark:15002").getOrCreate()`.
+5. Spark operations execute in the `spark` container with full Unity Catalog access.
+6. Results persist to MinIO and catalog metadata updates to Unity Catalog.
+
+### Configuration
+
+The Dagster stack is configured via `workspace/dagster/`:
+
+- `pyproject.toml`: Pinned Dagster 1.13.2 + companions (dagster-postgres, dagster-docker).
+- `dagster.yaml`: Instance configuration with Postgres storage, QueuedRunCoordinator, and DockerRunLauncher.
+- `workspace.yaml`: Points webserver/daemon to gRPC code server.
+- `dagster_workspace/definitions.py`: Exports asset definitions, jobs, and schedules.
 
 To use the Dagster UI, visit `http://localhost:3001`.
