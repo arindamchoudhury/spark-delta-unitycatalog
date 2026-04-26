@@ -155,9 +155,9 @@ services:
     volumes:
       - ./metadata/spark-events:/tmp/spark-events
 
-  dagster:
+  dagster-user-code:
     image: spark-delta-unitycatalog/spark:4.1.1
-    container_name: dagster
+    container_name: dagster-user-code
     user: "0:0"
     depends_on:
       spark:
@@ -165,17 +165,18 @@ services:
       postgres:
         condition: service_healthy
     working_dir: /workspace/dagster
-    command: ["bash", "-lc", "uv sync && dg(){ uv run dagster \"$@\"; }; dg dev -h 0.0.0.0 -p 3001"]
-    ports:
-      - "3001:3001"
+    command: ["bash", "-lc", "uv sync && uv run dagster code-server start -h 0.0.0.0 -p 4000 -m dagster_workspace.definitions"]
+    restart: always
     healthcheck:
-      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(); s.connect(('127.0.0.1', 3001)); s.close()\""]
+      test: ["CMD-SHELL", "uv run dagster api grpc-health-check -p 4000"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
     environment:
       - DAGSTER_HOME=/workspace/dagster
       - UV_SYSTEM_PYTHON=1
+      - UV_LINK_MODE=copy
+      - DAGSTER_CURRENT_IMAGE=spark-delta-unitycatalog/spark:4.1.1
     volumes:
       - ./metadata/uc:/tmp/uc
       - ./metadata/ivy:/tmp/.ivy2
@@ -183,3 +184,55 @@ services:
       - ./spark/conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
       - ./scripts:/opt/spark/scripts:ro
       - ./workspace:/workspace
+
+  dagster-webserver:
+    image: spark-delta-unitycatalog/spark:4.1.1
+    container_name: dagster-webserver
+    user: "0:0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      dagster-user-code:
+        condition: service_healthy
+    working_dir: /workspace/dagster
+    command: ["bash", "-lc", "uv sync && uv run dagster-webserver -h 0.0.0.0 -p 3001 -w /workspace/dagster/workspace.yaml"]
+    restart: always
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(); s.connect(('127.0.0.1', 3001)); s.close()\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    environment:
+      - DAGSTER_HOME=/workspace/dagster
+      - UV_SYSTEM_PYTHON=1
+      - UV_LINK_MODE=copy
+    volumes:
+      - ./workspace:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  dagster-daemon:
+    image: spark-delta-unitycatalog/spark:4.1.1
+    container_name: dagster-daemon
+    user: "0:0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      dagster-user-code:
+        condition: service_healthy
+    working_dir: /workspace/dagster
+    command: ["bash", "-lc", "uv sync && uv run dagster-daemon run"]
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f dagster-daemon || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    environment:
+      - DAGSTER_HOME=/workspace/dagster
+      - UV_SYSTEM_PYTHON=1
+      - UV_LINK_MODE=copy
+    volumes:
+      - ./workspace:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock

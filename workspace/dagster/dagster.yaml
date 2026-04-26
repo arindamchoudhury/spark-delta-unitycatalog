@@ -9,3 +9,25 @@ storage:
       hostname: postgres
       db_name: dagster
       port: 5432
+
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+
+run_launcher:
+  module: dagster_docker
+  class: DockerRunLauncher
+  config:
+    network: spark-delta-unitycatalog_default
+    env_vars:
+      - DAGSTER_HOME
+      - UV_SYSTEM_PYTHON
+      - UV_LINK_MODE
+    container_kwargs:
+      volumes:
+        - /home/arindam/project/spark-delta-unitycatalog/metadata/uc:/tmp/uc
+        - /home/arindam/project/spark-delta-unitycatalog/metadata/ivy:/tmp/.ivy2
+        - /home/arindam/project/spark-delta-unitycatalog/metadata/spark-events:/tmp/spark-events
+        - /home/arindam/project/spark-delta-unitycatalog/spark/conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
+        - /home/arindam/project/spark-delta-unitycatalog/scripts:/opt/spark/scripts:ro
+        - /home/arindam/project/spark-delta-unitycatalog/workspace:/workspace

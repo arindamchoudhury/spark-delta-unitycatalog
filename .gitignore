@@ -1,6 +1,7 @@
 spark/tar/hadoop-3.4.3.tar.gz
 metadata/ivy/**
 metadata/uc/**
+metadata/spark-events/**
 workspace/data/**
 !workspace/data/gutenberg_books/
 !workspace/data/gutenberg_books/**
@@ -12,9 +13,9 @@ metadata/postgres/**
 metadata/minio/**
 
 # Additional Untracked Files
+__pycache__/
 workspace/dagster/.nux/
 workspace/dagster/.telemetry/
-workspace/dagster/__pycache__/
 workspace/dagster/history/
 workspace/dagster/storage/
 bundle-*.jar
@@ -22,3 +23,7 @@ bundle-*.jar
 # Unity Catalog config directory (keep only the static server properties file)
 uc-conf/*
 !uc-conf/server.properties
+
+# Ignore notebooks except intro.ipynb
+workspace/notebooks/*.ipynb
+!workspace/notebooks/intro.ipynb

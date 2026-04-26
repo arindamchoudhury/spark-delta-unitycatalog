@@ -1,2 +1,5 @@
 load_from:
-  - python_module: dagster_workspace.definitions
+  - grpc_server:
+      host: dagster-user-code
+      port: 4000
+      location_name: spark_uc_code
