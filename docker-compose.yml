@@ -39,7 +39,7 @@ services:
           - server
 
   ui:
-    image: unitycatalog/unitycatalog-ui:v0.4.0
+    image: unitycatalog/unitycatalog-ui:main-aadc6fc
     container_name: unitycatalog-ui
     ports:
       - "3000:3000"
