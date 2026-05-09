@@ -254,7 +254,7 @@ curl -sS -X POST http://localhost:8080/api/2.1/unity-catalog/schemas \
 - Open the repo locally in VS Code and use the browser for the UI on `http://localhost:3000` and the API on `http://localhost:8080`.
 - Run `Tasks: Run Task` and use `compose: up`, `compose: down`, `compose: down -v`, `spark: smoke test`, or `ui: logs` from `.vscode/tasks.json`.
 - Open `unitycatalog.http` and use the REST Client extension to call the local Unity Catalog API directly from the editor.
-- If you want an in-container VS Code session, run `Dev Containers: Reopen in Container`. The `.devcontainer/devcontainer.json` file attaches VS Code to the running `spark` service while starting `unitycatalog` and `ui` alongside it.
+- If you want an in-container VS Code session, run `Dev Containers: Reopen in Container`. The `.devcontainer/devcontainer.json` file attaches VS Code to the running `spark` service while starting `unitycatalog` and `ui` alongside it. The default Python interpreter is set to `/opt/venv/bin/python3`, which has all packages (`pyspark`, `ipykernel`, Dagster, etc.) pre-installed. Notebooks must be run inside the devcontainer — the host Python has none of these packages.
 
 ## Notes
 
