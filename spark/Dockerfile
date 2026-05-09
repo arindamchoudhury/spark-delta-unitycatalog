@@ -55,4 +55,4 @@ RUN pip install --no-cache-dir \
     dagster==1.13.2 dagster-webserver==1.13.2 dagstermill==0.29.2 papermill \
     dagster-postgres==0.29.2 psycopg2-binary awscli uv
 
-RUN python3 -m ipykernel install --sys-prefix --name python3 --display-name "Python 3"
+RUN python3 -m ipykernel install --sys-prefix --name spark --display-name "Spark (Python 3)"
