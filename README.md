@@ -15,7 +15,7 @@ disk even if you remove containers or rebuild the stack.
 
 ## Prerequisites
 
-- Docker Desktop or Docker Engine with Compose v2
+- Docker Desktop or Docker Engine with Compose v2 (BuildKit must be enabled — default since Docker 23)
 - The local Hadoop archive must exist at `./spark/tar/hadoop-3.4.3.tar.gz`
 - Internet access on first Spark image build (to download baked dependency jars)
 
@@ -259,7 +259,7 @@ curl -sS -X POST http://localhost:8080/api/2.1/unity-catalog/schemas \
 ## Notes
 
 - This setup is for local experimentation, not production.
-- The Spark container runs as root to simplify write access on the shared host directory mounted at `/tmp/uc`.
+- The Spark image runs pip installs as the unprivileged `spark` user (uid 185) via a `/opt/venv` virtualenv. The `spark`, `spark-history`, and `dagster-user-code` services inherit that user. `dagster-webserver` and `dagster-daemon` still run as root because they mount the host Docker socket for DockerRunLauncher.
 - For a production-like setup, replace the shared local path with S3/ADLS/GCS and configure Unity Catalog storage credentials and external locations.
 - Notebooks in `workspace/notebooks/` are git-ignored except for `intro.ipynb`. Other `.ipynb` files can be used locally but are not tracked.
 
