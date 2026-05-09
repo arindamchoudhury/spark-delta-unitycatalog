@@ -1,13 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
+
     <Appenders>
         <Console name="console" target="SYSTEM_ERR">
-            <PatternLayout pattern="%d{yy/MM/dd HH:mm:ss} %p %c{1}: %m %n"/>
+            <PatternLayout pattern="%d{HH:mm:ss} %-5level %logger{36} - %msg%n"/>
         </Console>
     </Appenders>
+
     <Loggers>
-        <Root level="error">
+        <!-- Silence the four noisy Spark/Hadoop namespaces -->
+        <Logger name="org.apache.spark"  level="WARN" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+        <Logger name="org.apache.hadoop" level="WARN" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+        <Logger name="io.netty"          level="WARN" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+        <Logger name="org.spark_project" level="WARN" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+
+        <!-- Root catches everything else — your own code lands here -->
+        <Root level="WARN">
             <AppenderRef ref="console"/>
         </Root>
     </Loggers>
+
 </Configuration>
