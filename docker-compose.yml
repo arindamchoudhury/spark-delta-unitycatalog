@@ -110,6 +110,7 @@ services:
       dockerfile: spark/Dockerfile
     image: spark-delta-unitycatalog/spark:4.1.1
     container_name: spark
+    user: "0:0"
     depends_on:
       unitycatalog:
         condition: service_healthy
@@ -137,6 +138,7 @@ services:
   spark-history:
     image: spark-delta-unitycatalog/spark:4.1.1
     container_name: spark-history
+    user: "0:0"
     depends_on:
       spark:
         condition: service_healthy
@@ -156,6 +158,7 @@ services:
   dagster-user-code:
     image: spark-delta-unitycatalog/spark:4.1.1
     container_name: dagster-user-code
+    user: "0:0"
     depends_on:
       spark:
         condition: service_healthy

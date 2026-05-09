@@ -259,7 +259,7 @@ curl -sS -X POST http://localhost:8080/api/2.1/unity-catalog/schemas \
 ## Notes
 
 - This setup is for local experimentation, not production.
-- The Spark image runs pip installs as the unprivileged `spark` user (uid 185) via a `/opt/venv` virtualenv. The `spark`, `spark-history`, and `dagster-user-code` services inherit that user. `dagster-webserver` and `dagster-daemon` still run as root because they mount the host Docker socket for DockerRunLauncher.
+- The Spark image runs pip installs as the unprivileged `spark` user (uid 185) via a `/opt/venv` virtualenv. At runtime, all services run as `user: "0:0"` because they write to bind-mounted host directories (`./metadata`, `./workspace`) that are owned by the host user and not accessible to uid 185. The `dagster-webserver` and `dagster-daemon` services additionally require root for Docker socket access.
 - For a production-like setup, replace the shared local path with S3/ADLS/GCS and configure Unity Catalog storage credentials and external locations.
 - Notebooks in `workspace/notebooks/` are git-ignored except for `intro.ipynb`. Other `.ipynb` files can be used locally but are not tracked.
 
