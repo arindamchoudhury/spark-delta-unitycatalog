@@ -16,7 +16,7 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "python.defaultInterpreterPath": "/usr/bin/python3"
+        "python.defaultInterpreterPath": "/opt/venv/bin/python3"
       },
       "extensions": [
         "ms-azuretools.vscode-docker",
