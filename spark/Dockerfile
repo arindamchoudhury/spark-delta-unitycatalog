@@ -44,7 +44,8 @@ RUN set -eux; \
     curl -fsSL "$base_url/io/delta/delta-storage/${DELTA_VERSION}/delta-storage-${DELTA_VERSION}.jar" -o /opt/spark/jars/delta-storage-${DELTA_VERSION}.jar
 
 RUN python3 -m venv /opt/envs/spark && chown -R spark:spark /opt/envs/spark
-ENV PATH="/opt/envs/spark/bin:$PATH"
+ENV PATH="/opt/envs/spark/bin:$PATH" \
+    JUPYTER_PATH="/opt/envs/spark/share/jupyter"
 
 USER spark
 
