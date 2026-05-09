@@ -43,8 +43,8 @@ RUN set -eux; \
     curl -fsSL "$base_url/io/delta/delta-spark_2.13/${DELTA_VERSION}/delta-spark_2.13-${DELTA_VERSION}.jar" -o /opt/spark/jars/delta-spark_2.13-${DELTA_VERSION}.jar; \
     curl -fsSL "$base_url/io/delta/delta-storage/${DELTA_VERSION}/delta-storage-${DELTA_VERSION}.jar" -o /opt/spark/jars/delta-storage-${DELTA_VERSION}.jar
 
-RUN python3 -m venv /opt/venv && chown -R spark:spark /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+RUN python3 -m venv /opt/envs/spark && chown -R spark:spark /opt/envs/spark
+ENV PATH="/opt/envs/spark/bin:$PATH"
 
 USER spark
 
