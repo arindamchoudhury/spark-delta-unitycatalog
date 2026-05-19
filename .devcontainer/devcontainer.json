@@ -5,9 +5,14 @@
   ],
   "service": "spark",
   "runServices": [
+    "minio-setup",
     "unitycatalog",
     "ui",
-    "spark"
+    "spark",
+    "spark-history",
+    "dagster-user-code",
+    "dagster-webserver",
+    "dagster-daemon"
   ],
   "workspaceFolder": "/workspace",
   "shutdownAction": "stopCompose",
