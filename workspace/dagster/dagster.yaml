@@ -24,6 +24,7 @@ run_launcher:
       - UV_SYSTEM_PYTHON
       - UV_LINK_MODE
     container_kwargs:
+      auto_remove: true
       volumes:
         - /home/arindam/project/spark-delta-unitycatalog/metadata/uc:/tmp/uc
         - /home/arindam/project/spark-delta-unitycatalog/metadata/ivy:/tmp/.ivy2
