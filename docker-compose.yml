@@ -165,17 +165,16 @@ services:
       postgres:
         condition: service_healthy
     working_dir: /workspace/dagster
-    command: ["bash", "-lc", "uv sync && uv run dagster code-server start -h 0.0.0.0 -p 4000 -m dagster_workspace.definitions"]
+    command: ["bash", "-lc", "dagster code-server start -h 0.0.0.0 -p 4000 -m dagster_workspace.definitions"]
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "uv run dagster api grpc-health-check -p 4000"]
+      test: ["CMD-SHELL", "dagster api grpc-health-check -p 4000"]
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 60s
     environment:
       - DAGSTER_HOME=/workspace/dagster
-      - UV_SYSTEM_PYTHON=1
-      - UV_LINK_MODE=copy
       - DAGSTER_CURRENT_IMAGE=spark-delta-unitycatalog/spark:4.1.1
     volumes:
       - ./metadata/uc:/tmp/uc
@@ -195,7 +194,7 @@ services:
       dagster-user-code:
         condition: service_healthy
     working_dir: /workspace/dagster
-    command: ["bash", "-lc", "uv sync && uv run dagster-webserver -h 0.0.0.0 -p 3001 -w /workspace/dagster/workspace.yaml"]
+    command: ["bash", "-lc", "dagster-webserver -h 0.0.0.0 -p 3001 -w /workspace/dagster/workspace.yaml"]
     restart: always
     ports:
       - "3001:3001"
@@ -204,10 +203,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 30s
     environment:
       - DAGSTER_HOME=/workspace/dagster
-      - UV_SYSTEM_PYTHON=1
-      - UV_LINK_MODE=copy
     volumes:
       - ./workspace:/workspace
       - /var/run/docker.sock:/var/run/docker.sock
@@ -222,7 +220,7 @@ services:
       dagster-user-code:
         condition: service_healthy
     working_dir: /workspace/dagster
-    command: ["bash", "-lc", "uv sync && uv run dagster-daemon run"]
+    command: ["bash", "-lc", "dagster-daemon run"]
     restart: on-failure
     healthcheck:
       test: ["CMD-SHELL", "pgrep -f dagster-daemon || exit 1"]
@@ -231,8 +229,6 @@ services:
       retries: 10
     environment:
       - DAGSTER_HOME=/workspace/dagster
-      - UV_SYSTEM_PYTHON=1
-      - UV_LINK_MODE=copy
     volumes:
       - ./workspace:/workspace
       - /var/run/docker.sock:/var/run/docker.sock

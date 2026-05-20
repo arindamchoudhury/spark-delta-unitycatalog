@@ -5,7 +5,6 @@
   ],
   "service": "spark",
   "runServices": [
-    "minio-setup",
     "unitycatalog",
     "ui",
     "spark",
