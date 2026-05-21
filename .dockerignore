@@ -1,0 +1,22 @@
+# Exclude everything not needed by the Spark image build.
+# The build only needs spark/tar/, spark/jar/, and spark/entrypoint.sh.
+
+# Runtime data and large directories
+metadata/
+workspace/
+uc-conf/
+
+# Version control and IDE
+.git/
+.gitignore
+.vscode/
+.devcontainer/
+.claude/
+
+# Docs and scripts (not used during build)
+*.md
+*.http
+scripts/
+download_deps.py
+environment.yml
+docker-compose.yml
