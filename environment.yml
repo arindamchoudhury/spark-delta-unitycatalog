@@ -1,0 +1,8 @@
+name: spark-delta-uc
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.14
+  - httpx>=0.27
+  - h2>=4.1        # enables HTTP/2 support in httpx

@@ -2,7 +2,7 @@
 
 This project wires together:
 
-- Apache Spark 4.1.1 (Scala 2.13, Java 21, Python, Ubuntu image)
+- Apache Spark 4.1.1 (Scala 2.13, Java 21, Python 3.14, Ubuntu 26.04)
 - Delta Lake (Spark extension + connector)
 - Unity Catalog OSS server
 
@@ -16,8 +16,21 @@ disk even if you remove containers or rebuild the stack.
 ## Prerequisites
 
 - Docker Desktop or Docker Engine with Compose v2 (BuildKit must be enabled — default since Docker 23)
-- The local Hadoop archive must exist at `./spark/tar/hadoop-3.4.3.tar.gz`
-- Internet access on first Spark image build (to download baked dependency jars)
+- [Conda](https://docs.conda.io/) (Miniforge recommended) for the local Python environment
+
+### Download dependencies
+
+All Spark/Hadoop tarballs and Maven jars must be pre-downloaded before building the Docker image. Create the conda environment, then run the download script:
+
+```bash
+conda env create -f environment.yml
+conda activate spark-delta-uc
+python download_deps.py
+```
+
+This downloads into `spark/tar/` (tarballs) and `spark/jar/` (jars). Both directories are git-ignored. Files already present are skipped on re-runs.
+
+The script reads all versions from `spark/Dockerfile` so there is no duplication — bump a version in the Dockerfile and re-run `download_deps.py` to refresh.
 
 ## Start the stack
 
@@ -171,15 +184,15 @@ To verify completed applications are visible:
 curl -sS http://localhost:18080/api/v1/applications
 ```
 
-If you get image build download errors, re-run once network access is available.
-The Spark image now bakes in the S3A/Hadoop AWS jars, Unity Catalog connector jars,
-and Delta Lake jars so Spark SQL does not need runtime Maven resolution.
+If any jars or tarballs are missing, re-run `python download_deps.py` before building.
+The Spark image bakes in S3A/Hadoop AWS jars, Unity Catalog connector jars, and Delta
+Lake jars so Spark SQL does not need runtime Maven resolution.
 
 ## Hadoop native library support
 
 The Spark image in `spark/Dockerfile` includes Hadoop native binaries under
-`/opt/hadoop/lib/native` from the local archive `./spark/tar/hadoop-3.4.3.tar.gz`
-and exports `LD_LIBRARY_PATH` so Hadoop can load
+`/opt/hadoop/lib/native` from the pre-downloaded archive `./spark/tar/hadoop-3.4.3.tar.gz`
+(fetched by `download_deps.py`) and exports `LD_LIBRARY_PATH` so Hadoop can load
 `libhadoop.so`.
 
 If you changed the Dockerfile or any baked-in dependency versions, rebuild the `spark` image:
@@ -259,7 +272,7 @@ curl -sS -X POST http://localhost:8080/api/2.1/unity-catalog/schemas \
 ## Notes
 
 - This setup is for local experimentation, not production.
-- The Spark image runs pip installs as the unprivileged `spark` user (uid 185) via a `/opt/envs/spark` virtualenv. At runtime, all services run as `user: "0:0"` because they write to bind-mounted host directories (`./metadata`, `./workspace`) that are owned by the host user and not accessible to uid 185. The `dagster-webserver` and `dagster-daemon` services additionally require root for Docker socket access.
+- The Spark image is built from `eclipse-temurin:21-resolute` (Ubuntu 26.04, Java 21) with Python 3.14 installed from Ubuntu's native repositories. It runs pip installs as the unprivileged `spark` user (uid 185) via a `/opt/envs/spark` virtualenv. At runtime, all services run as `user: "0:0"` because they write to bind-mounted host directories (`./metadata`, `./workspace`) that are owned by the host user and not accessible to uid 185. The `dagster-webserver` and `dagster-daemon` services additionally require root for Docker socket access.
 - For a production-like setup, replace the shared local path with S3/ADLS/GCS and configure Unity Catalog storage credentials and external locations.
 - Notebooks in `workspace/notebooks/` are git-ignored except for `intro.ipynb`. Other `.ipynb` files can be used locally but are not tracked.
 

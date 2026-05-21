@@ -1,4 +1,6 @@
-spark/tar/hadoop-3.4.3.tar.gz
+.claude
+spark/tar/*
+spark/jar/*
 metadata/ivy/**
 metadata/uc/**
 metadata/spark-events/**
