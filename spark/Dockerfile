@@ -52,7 +52,7 @@ USER spark
 RUN pip install --no-cache-dir \
     ipykernel \
     pyspark==4.1.1 \
-    pandas pyarrow grpcio grpcio-status zstandard \
+    pandas scikit-learn pyarrow grpcio grpcio-status zstandard \
     dagster==1.13.2 dagster-webserver==1.13.2 dagstermill==0.29.2 papermill \
     dagster-postgres==0.29.2 psycopg2-binary awscli uv
 
