@@ -22,6 +22,7 @@ bundle-*.jar
 
 # Unity Catalog config directory (contains rotated credentials)
 uc-conf/*
+!uc-conf/server.properties.orig
 
 # Ignore notebooks except intro.ipynb
 workspace/notebooks/*.ipynb

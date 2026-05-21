@@ -9,13 +9,14 @@ services:
       - ./uc-conf:/uc-conf
       - ./scripts:/scripts:ro
     command:
-      - python3
-      - /scripts/rotate_uc_sts.py
-      - --minio-endpoint
-      - http://minio:9000
-      - --config
-      - /uc-conf/server.properties
-      - --no-restart
+      - bash
+      - -c
+      - |
+        cp -n /uc-conf/server.properties.orig /uc-conf/server.properties
+        python3 /scripts/rotate_uc_sts.py \
+          --minio-endpoint http://minio:9000 \
+          --config /uc-conf/server.properties \
+          --no-restart
 
   unitycatalog:
     image: unitycatalog/unitycatalog:v0.4.0
