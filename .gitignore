@@ -20,9 +20,8 @@ workspace/dagster/history/
 workspace/dagster/storage/
 bundle-*.jar
 
-# Unity Catalog config directory (keep only the static server properties file)
+# Unity Catalog config directory (contains rotated credentials)
 uc-conf/*
-!uc-conf/server.properties
 
 # Ignore notebooks except intro.ipynb
 workspace/notebooks/*.ipynb
