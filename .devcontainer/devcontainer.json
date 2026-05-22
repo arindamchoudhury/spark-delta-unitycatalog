@@ -5,6 +5,8 @@
   ],
   "service": "spark",
   "runServices": [
+    "minio",
+    "postgres",
     "unitycatalog",
     "ui",
     "spark",
