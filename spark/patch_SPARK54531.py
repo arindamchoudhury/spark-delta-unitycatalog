@@ -110,22 +110,22 @@ content = content.replace(OLD_IMPORT, NEW_IMPORT, 1)
 
 # 2b. Split the combined eval_type branch so AGG/WINDOW_AGG get the new serializer
 OLD_ROUTING = (
-    "    elif eval_type in (\n"
-    "        PythonEvalType.SQL_GROUPED_MAP_PANDAS_UDF,\n"
-    "        PythonEvalType.SQL_GROUPED_AGG_PANDAS_UDF,\n"
-    "        PythonEvalType.SQL_WINDOW_AGG_PANDAS_UDF,\n"
-    "    ):"
+    "        elif eval_type in (\n"
+    "            PythonEvalType.SQL_GROUPED_MAP_PANDAS_UDF,\n"
+    "            PythonEvalType.SQL_GROUPED_AGG_PANDAS_UDF,\n"
+    "            PythonEvalType.SQL_WINDOW_AGG_PANDAS_UDF,\n"
+    "        ):"
 )
 NEW_ROUTING = (
-    "    elif eval_type in (\n"
-    "        PythonEvalType.SQL_GROUPED_AGG_PANDAS_UDF,\n"
-    "        PythonEvalType.SQL_WINDOW_AGG_PANDAS_UDF,\n"
-    "    ):\n"
-    "        ser = ArrowStreamAggPandasUDFSerializer(\n"
-    "            timezone, safecheck, _assign_cols_by_name,"
+    "        elif eval_type in (\n"
+    "            PythonEvalType.SQL_GROUPED_AGG_PANDAS_UDF,\n"
+    "            PythonEvalType.SQL_WINDOW_AGG_PANDAS_UDF,\n"
+    "        ):\n"
+    "            ser = ArrowStreamAggPandasUDFSerializer(\n"
+    "                timezone, safecheck, _assign_cols_by_name,"
     " int_to_decimal_coercion_enabled\n"
-    "        )\n"
-    "    elif eval_type == PythonEvalType.SQL_GROUPED_MAP_PANDAS_UDF:"
+    "            )\n"
+    "        elif eval_type == PythonEvalType.SQL_GROUPED_MAP_PANDAS_UDF:"
 )
 if OLD_ROUTING not in content:
     print("ERROR: could not find routing anchor in worker.py", file=sys.stderr)
