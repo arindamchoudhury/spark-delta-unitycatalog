@@ -136,3 +136,17 @@ content = content.replace(OLD_ROUTING, NEW_ROUTING, 1)
 
 worker_path.write_text(content)
 print("worker.py: patched OK")
+
+
+# ---------------------------------------------------------------------------
+# 3. pyspark.zip — update both patched files so worker processes (which Spark
+#    launches with pyspark.zip first on PYTHONPATH) see the same patches.
+# ---------------------------------------------------------------------------
+
+import zipfile
+
+zip_path = PYSPARK.parent / "lib" / "pyspark.zip"
+with zipfile.ZipFile(zip_path, "a") as zf:
+    zf.write(serializers_path, "pyspark/sql/pandas/serializers.py")
+    zf.write(worker_path, "pyspark/worker.py")
+print("pyspark.zip: updated OK")
