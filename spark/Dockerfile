@@ -83,8 +83,6 @@ RUN --mount=type=bind,source=spark/tar/spark-4.1.1-bin-hadoop3-connect.tgz,targe
 COPY spark/entrypoint.sh /opt/entrypoint.sh
 RUN chmod +x /opt/entrypoint.sh
 
-COPY spark/patch_SPARK54531.py /tmp/patch_SPARK54531.py
-
 ENV SPARK_HOME=/opt/spark
 
 # ---------- Hadoop ----------
@@ -119,11 +117,6 @@ RUN pip install --no-cache-dir \
     pandas scikit-learn pyarrow grpcio grpcio-status zstandard \
     dagster==1.13.2 dagster-webserver==1.13.2 dagstermill==0.29.2 papermill \
     dagster-postgres==0.29.2 psycopg2-binary awscli uv
-
-# ---------- Backport SPARK-54531 (fixed in 4.2.0) ----------
-# Gives SQL_GROUPED_AGG_PANDAS_UDF and SQL_WINDOW_AGG_PANDAS_UDF their own
-# serializer so they stop sharing GroupPandasUDFSerializer with GROUPED_MAP.
-RUN python3.14 /tmp/patch_SPARK54531.py
 
 # Use the tarball's PySpark instead of a pip-installed copy so the daemon
 # and workers load from identical files. A .pth file wires both pyspark and
