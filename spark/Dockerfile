@@ -114,10 +114,15 @@ USER spark
 
 RUN pip install --no-cache-dir \
     ipykernel \
-    pyspark==4.1.1 \
     pandas scikit-learn pyarrow grpcio grpcio-status zstandard \
     dagster==1.13.2 dagster-webserver==1.13.2 dagstermill==0.29.2 papermill \
     dagster-postgres==0.29.2 psycopg2-binary awscli uv
+
+# Use the tarball's PySpark instead of a pip-installed copy so the daemon
+# and workers load from identical files. A .pth file wires both pyspark and
+# py4j into the venv without duplicating them.
+RUN echo "/opt/spark/python" > /opt/envs/spark/lib/python3.14/site-packages/spark.pth \
+ && find /opt/spark/python/lib -name "py4j*.zip" >> /opt/envs/spark/lib/python3.14/site-packages/spark.pth
 
 RUN python3 -m ipykernel install --sys-prefix --name spark --display-name "spark"
 
