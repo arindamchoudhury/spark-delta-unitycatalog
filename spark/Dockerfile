@@ -12,8 +12,8 @@ ENV HADOOP_VERSION=3.4.3 \
     AWS_SDK_BUNDLE_VERSION=2.35.4 \
     AWS_ANALYTICS_ACCELERATOR_VERSION=1.3.1 \
     WILDFLY_OPENSSL_VERSION=2.2.5.Final \
-    UNITYCATALOG_VERSION=0.4.0 \
-    DELTA_VERSION=4.1.0
+    UNITYCATALOG_VERSION=0.4.1 \
+    DELTA_VERSION=4.2.0
 
 # ---------- Spark user ----------
 RUN groupadd --system --gid=${spark_uid} spark && \
