@@ -20,8 +20,10 @@ RUN git clone --branch branch-4.2 --depth 1 \
         https://github.com/apache/spark.git
 
 WORKDIR /build/spark
+# Cache only the Maven local repo (.m2). Do NOT cache /build/spark/build —
+# Spark's own build/mvn wrapper script lives there, and an empty cache mount
+# would mask it, breaking make-distribution.sh's Maven lookup (exit -1 / 255).
 RUN --mount=type=cache,target=/root/.m2 \
-    --mount=type=cache,target=/build/spark/build \
     MAVEN_OPTS="-Xss128m -Xmx4g -Xms4g -XX:ReservedCodeCacheSize=128m" \
     MAVEN_ARGS="-B" \
     ./dev/make-distribution.sh \
