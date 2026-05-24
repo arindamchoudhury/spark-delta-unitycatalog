@@ -2,7 +2,7 @@
 
 This project wires together:
 
-- Apache Spark 4.1.1 (Scala 2.13, Java 21, Python 3.14, Ubuntu 26.04)
+- Apache Spark 4.1.2 (Scala 2.13, Java 21, Python 3.14, Ubuntu 26.04)
 - Delta Lake (Spark extension + connector)
 - Unity Catalog OSS server
 
@@ -281,7 +281,7 @@ curl -sS -X POST http://localhost:8080/api/2.1/unity-catalog/schemas \
 - `uc-rotate`: A one-shot helper that refreshes MinIO STS credentials in `uc-conf/server.properties` before Unity Catalog starts.
 - `unitycatalog`: The open source Unity Catalog server running on port `8080`.
 - `ui`: The Unity Catalog UI running on port `3000`.
-- `spark`: The PySpark 4.1.1 execution environment running a Spark Connect server on port `15002`.
+- `spark`: The PySpark 4.1.2 execution environment running a Spark Connect server on port `15002`.
 - `spark-history`: Dedicated Spark History Server running on port `18080` for event log visualization.
 - `dagster-webserver`: Dagster web UI running on port `3001` serving the control plane.
 - `dagster-daemon`: Dagster daemon process handling schedules, sensors, and run queue coordination.

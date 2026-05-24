@@ -8,5 +8,5 @@ dependencies = [
 	"dagster-docker==0.29.2",
 	"dagster-postgres==0.29.2",
 	"dagstermill==0.29.2",
-	"pyspark==4.1.1",
+	"pyspark==4.1.2",
 ]
