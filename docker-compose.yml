@@ -19,7 +19,7 @@ services:
           --no-restart
 
   unitycatalog:
-    image: unitycatalog/unitycatalog:v0.4.1
+    image: unitycatalog/unitycatalog:v0.4.0
     container_name: unitycatalog
     ports:
       - "8080:8080"
