@@ -1,12 +1,36 @@
 # syntax=docker/dockerfile:1
+
+# ---------- Stage 1: Build Spark from branch-4.2 ----------
+FROM eclipse-temurin:21 AS spark-builder
+
+# Change to pick up newer branch-4.2 commits (busts the git-clone cache layer)
+ARG SPARK_BRANCH_SHA=latest
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git maven python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+RUN git clone --branch branch-4.2 --depth 1 \
+        https://github.com/apache/spark.git
+
+WORKDIR /build/spark
+RUN MAVEN_OPTS="-Xss64m -Xmx4g" \
+    ./dev/make-distribution.sh \
+        --name hadoop3-connect \
+        --tgz \
+        -Phadoop-3 \
+        -Pconnect \
+    && mv spark-*-bin-hadoop3-connect.tgz /spark.tgz
+
+# ---------- Stage 2: Runtime image ----------
 FROM eclipse-temurin:21-resolute
 
 ARG spark_uid=185
 
 # ---------- Version pins (read by download_deps.py) ----------
 ENV HADOOP_VERSION=3.4.3 \
-    SPARK_VERSION=4.2.0-preview5 \
-    SPARK_PACKAGE=spark-4.2.0-preview5-bin-hadoop3-connect \
+    SPARK_VERSION=4.2.0-SNAPSHOT \
     SCALA_VERSION=2.13 \
     HADOOP_AWS_VERSION=3.4.3 \
     AWS_SDK_BUNDLE_VERSION=2.35.4 \
@@ -24,7 +48,6 @@ RUN --mount=type=bind,source=.,target=/src \
     set -e; \
     missing=""; \
     for f in \
-        "spark/tar/${SPARK_PACKAGE}.tgz" \
         "spark/tar/hadoop-${HADOOP_VERSION}.tar.gz" \
         "spark/jar/hadoop-aws-${HADOOP_AWS_VERSION}.jar" \
         "spark/jar/bundle-${AWS_SDK_BUNDLE_VERSION}.jar" \
@@ -58,9 +81,9 @@ RUN set -ex; \
     echo "auth required pam_wheel.so use_uid" >> /etc/pam.d/su; \
     rm -rf /var/lib/apt/lists/*
 
-# ---------- Install Spark from local tarball ----------
-RUN --mount=type=bind,source=spark/tar/spark-4.2.0-preview5-bin-hadoop3-connect.tgz,target=/tmp/spark.tgz \
-    set -ex; \
+# ---------- Install Spark from branch-4.2 build ----------
+COPY --from=spark-builder /spark.tgz /tmp/spark.tgz
+RUN set -ex; \
     export SPARK_TMP="$(mktemp -d)"; \
     tar -xf /tmp/spark.tgz -C "$SPARK_TMP" --strip-components=1; \
     cd "$SPARK_TMP"; \
@@ -78,6 +101,7 @@ RUN --mount=type=bind,source=spark/tar/spark-4.2.0-preview5-bin-hadoop3-connect.
     mv kubernetes/dockerfiles/spark/decom.sh /opt/ 2>/dev/null || true; \
     mv R /opt/spark/ 2>/dev/null || true; \
     chmod a+x /opt/decom.sh 2>/dev/null || true; \
+    rm -f /tmp/spark.tgz; \
     rm -rf "$SPARK_TMP"
 
 COPY spark/entrypoint.sh /opt/entrypoint.sh
