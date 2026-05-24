@@ -56,12 +56,14 @@ only then allows `unitycatalog` to start.
 
 ### Picking up newer branch-4.2 commits
 
-The Docker layer cache keeps the git clone pinned to the commit at first build. To force a fresh clone and recompile:
+Docker caches the `git clone` layer, so the build stays pinned to the commit present at first build. To pull the latest `branch-4.2` commits and recompile Spark:
 
 ```bash
 docker compose build spark --build-arg SPARK_BRANCH_SHA=$(date +%Y%m%d)
 docker compose up -d
 ```
+
+`SPARK_BRANCH_SHA` is passed to the builder stage as a cache-buster — its value is not used inside the build, only to invalidate the layer. Passing today's date is a convenient way to force a rebuild once per day; use any value that differs from the previous build to trigger a fresh clone.
 
 ## Validate Unity Catalog is reachable
 

@@ -3,8 +3,7 @@
 # ---------- Stage 1: Build Spark from branch-4.2 ----------
 FROM eclipse-temurin:21 AS spark-builder
 
-# Change to pick up newer branch-4.2 commits (busts the git-clone cache layer).
-# Usage: docker compose build spark --build-arg SPARK_BRANCH_SHA=$(date +%Y%m%d)
+# Change to pick up newer branch-4.2 commits (busts the git-clone cache layer)
 ARG SPARK_BRANCH_SHA=latest
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
