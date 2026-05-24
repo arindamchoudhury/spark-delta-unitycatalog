@@ -19,7 +19,9 @@ RUN git clone --branch branch-4.2 --depth 1 \
         https://github.com/apache/spark.git
 
 WORKDIR /build/spark
-RUN MAVEN_OPTS="-Xss128m -Xmx4g -XX:ReservedCodeCacheSize=128m" \
+RUN --mount=type=cache,target=/root/.m2 \
+    --mount=type=cache,target=/build/spark/build \
+    MAVEN_OPTS="-Xss128m -Xmx4g -XX:ReservedCodeCacheSize=128m" \
     ./dev/make-distribution.sh \
         --name hadoop3-connect \
         --tgz \
