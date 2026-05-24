@@ -3,24 +3,27 @@
 # ---------- Stage 1: Build Spark from branch-4.2 ----------
 FROM eclipse-temurin:21 AS spark-builder
 
-# Change to pick up newer branch-4.2 commits (busts the git-clone cache layer)
-ARG SPARK_BRANCH_SHA=latest
-
+# build/mvn (Spark's wrapper) needs curl to download the exact Maven version
+# from pom.xml; python3 is called by make-distribution.sh for pip packaging.
+# System maven is NOT used — build/mvn downloads the correct version itself.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        git maven python3 \
+        git curl python3 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
+
+# ARG placed here so changing it only busts layers from git clone onward,
+# not the apt-get layer above.
+ARG SPARK_BRANCH_SHA=latest
 RUN git clone --branch branch-4.2 --depth 1 \
         https://github.com/apache/spark.git
 
 WORKDIR /build/spark
-RUN MAVEN_OPTS="-Xss64m -Xmx4g" \
+RUN MAVEN_OPTS="-Xss128m -Xmx4g -XX:ReservedCodeCacheSize=128m" \
     ./dev/make-distribution.sh \
         --name hadoop3-connect \
         --tgz \
         -Phadoop-3 \
-        -Pconnect \
     && mv spark-*-bin-hadoop3-connect.tgz /spark.tgz
 
 # ---------- Stage 2: Runtime image ----------
