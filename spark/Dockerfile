@@ -116,7 +116,11 @@ RUN pip install --no-cache-dir \
     ipykernel \
     pandas scikit-learn pyarrow grpcio grpcio-status zstandard \
     dagster==1.13.2 dagster-webserver==1.13.2 dagstermill==0.29.2 papermill \
-    dagster-postgres==0.29.2 psycopg2-binary awscli uv
+    dagster-postgres==0.29.2 psycopg2-binary awscli uv \
+    unitycatalog-ai==0.4.0 \
+    unitycatalog-openai==0.4.0 \
+    unitycatalog-anthropic==0.2.0 \
+    unitycatalog-langchain==0.4.0
 
 # Use the tarball's PySpark instead of a pip-installed copy so the daemon
 # and workers load from identical files. A .pth file wires both pyspark and
