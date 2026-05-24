@@ -4,10 +4,11 @@
 FROM eclipse-temurin:21 AS spark-builder
 
 # build/mvn (Spark's wrapper) needs curl to download the exact Maven version
-# from pom.xml; python3 is called by make-distribution.sh for pip packaging.
-# System maven is NOT used — build/mvn downloads the correct version itself.
+# from pom.xml; zip is called unconditionally by make-distribution.sh to
+# strip entries from JARs. System maven is NOT used — build/mvn downloads
+# the correct version itself.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        git curl python3 \
+        git curl zip python3 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
