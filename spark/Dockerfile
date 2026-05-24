@@ -23,6 +23,7 @@ WORKDIR /build/spark
 RUN --mount=type=cache,target=/root/.m2 \
     --mount=type=cache,target=/build/spark/build \
     MAVEN_OPTS="-Xss128m -Xmx4g -Xms4g -XX:ReservedCodeCacheSize=128m" \
+    MAVEN_ARGS="-B" \
     ./dev/make-distribution.sh \
         --name hadoop3-connect \
         --tgz \
