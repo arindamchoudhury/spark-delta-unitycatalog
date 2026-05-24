@@ -127,8 +127,19 @@ ENV HADOOP_HOME=/opt/hadoop \
     SPARK_DIST_CLASSPATH=/opt/hadoop/share/hadoop/common/*:/opt/hadoop/share/hadoop/common/lib/*:/opt/hadoop/share/hadoop/hdfs/*:/opt/hadoop/share/hadoop/hdfs/lib/*:/opt/hadoop/share/hadoop/mapreduce/*:/opt/hadoop/share/hadoop/mapreduce/lib/*:/opt/hadoop/share/hadoop/yarn/*:/opt/hadoop/share/hadoop/yarn/lib/*
 
 # ---------- S3A, Delta, Unity Catalog jars ----------
+# Copy only the pinned versions (not *.jar) so stale leftovers in
+# spark/jar/ never leak duplicate/conflicting versions onto the classpath.
 RUN --mount=type=bind,source=spark/jar,target=/tmp/jars \
-    cp /tmp/jars/*.jar /opt/spark/jars/
+    cp \
+        "/tmp/jars/hadoop-aws-${HADOOP_AWS_VERSION}.jar" \
+        "/tmp/jars/bundle-${AWS_SDK_BUNDLE_VERSION}.jar" \
+        "/tmp/jars/analyticsaccelerator-s3-${AWS_ANALYTICS_ACCELERATOR_VERSION}.jar" \
+        "/tmp/jars/wildfly-openssl-${WILDFLY_OPENSSL_VERSION}.jar" \
+        "/tmp/jars/unitycatalog-client-${UNITYCATALOG_VERSION}.jar" \
+        "/tmp/jars/unitycatalog-spark_${SCALA_VERSION}-${UNITYCATALOG_VERSION}.jar" \
+        "/tmp/jars/delta-spark_${SCALA_VERSION}-${DELTA_VERSION}.jar" \
+        "/tmp/jars/delta-storage-${DELTA_VERSION}.jar" \
+        /opt/spark/jars/
 
 # ---------- Python 3.14 venv ----------
 RUN python3.14 -m venv /opt/envs/spark && chown -R spark:spark /opt/envs/spark
