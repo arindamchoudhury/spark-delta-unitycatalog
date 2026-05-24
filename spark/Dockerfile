@@ -114,7 +114,7 @@ USER spark
 
 RUN pip install --no-cache-dir \
     ipykernel \
-    pandas scikit-learn pyarrow grpcio grpcio-status zstandard \
+    "pandas<3" scikit-learn pyarrow grpcio grpcio-status zstandard \
     dagster==1.13.2 dagster-webserver==1.13.2 dagstermill==0.29.2 papermill \
     dagster-postgres==0.29.2 psycopg2-binary awscli uv \
     unitycatalog-ai==0.4.0 \
