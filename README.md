@@ -1,10 +1,12 @@
 # spark-delta-unitycatalog Local Stack
 
+> **Branch: `preview`** — Spark built from [`branch-4.2`](https://github.com/apache/spark/tree/branch-4.2) source. See `main` for the stable Spark 4.1.2 stack.
+
 This project wires together:
 
-- Apache Spark 4.1.2 (Scala 2.13, Java 21, Python 3.14, Ubuntu 26.04)
-- Delta Lake (Spark extension + connector)
-- Unity Catalog OSS server
+- Apache Spark 4.2.0-SNAPSHOT (built from `branch-4.2`, Scala 2.13, Java 21, Python 3.14, Ubuntu 26.04)
+- Delta Lake 4.2.0 (Spark extension + connector)
+- Unity Catalog OSS server 0.4.0
 
 The stack runs with Docker Compose and uses a shared mounted path (`/tmp/uc`) so
 Spark can read Delta table locations registered in Unity Catalog.
@@ -20,7 +22,7 @@ disk even if you remove containers or rebuild the stack.
 
 ### Download dependencies
 
-All Spark/Hadoop tarballs and Maven jars must be pre-downloaded before building the Docker image. Create the conda environment, then run the download script:
+The Spark tarball is **built from source** during the Docker image build — no pre-download needed. All other dependencies (Hadoop, Maven jars) must be pre-downloaded:
 
 ```bash
 conda env create -f environment.yml
@@ -38,6 +40,8 @@ The script reads all versions from `spark/Dockerfile` so there is no duplication
 docker compose up -d
 ```
 
+The **first build** compiles Spark from `branch-4.2` source and takes **30–60 minutes**. Subsequent builds reuse the Docker layer cache and are fast.
+
 The Unity Catalog UI is available at `http://localhost:3000`.
 Dagster UI is available at `http://localhost:3001`.
 Spark UI is exposed on `http://localhost:4040` while a Spark application is running
@@ -49,6 +53,15 @@ Dagster gRPC code server runs internally on port `4000`.
 During startup, the one-shot `uc-rotate` service runs `scripts/rotate_uc_sts.py`
 against MinIO, writes fresh STS credentials into `uc-conf/server.properties`, and
 only then allows `unitycatalog` to start.
+
+### Picking up newer branch-4.2 commits
+
+The Docker layer cache keeps the git clone pinned to the commit at first build. To force a fresh clone and recompile:
+
+```bash
+docker compose build spark --build-arg SPARK_BRANCH_SHA=$(date +%Y%m%d)
+docker compose up -d
+```
 
 ## Validate Unity Catalog is reachable
 
@@ -184,7 +197,7 @@ To verify completed applications are visible:
 curl -sS http://localhost:18080/api/v1/applications
 ```
 
-If any jars or tarballs are missing, re-run `python download_deps.py` before building.
+If any jars are missing, re-run `python download_deps.py` before building.
 The Spark image bakes in S3A/Hadoop AWS jars, Unity Catalog connector jars, and Delta
 Lake jars so Spark SQL does not need runtime Maven resolution.
 
@@ -212,6 +225,18 @@ jvm = spark.sparkContext._jvm
 print("Native loaded:", jvm.org.apache.hadoop.util.NativeCodeLoader.isNativeCodeLoaded())
 PY
 ```
+
+## Unity Catalog AI integrations
+
+The Spark image includes the Unity Catalog AI Python libraries for registering and
+calling UC functions as tools in LLM applications:
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `unitycatalog-ai` | 0.4.0 | Core UC function client |
+| `unitycatalog-openai` | 0.4.0 | OpenAI tool-call integration |
+| `unitycatalog-anthropic` | 0.2.0 | Anthropic/Claude tool use |
+| `unitycatalog-langchain` | 0.4.0 | LangChain toolkit |
 
 ## Run an interactive Spark SQL shell
 
@@ -272,7 +297,8 @@ curl -sS -X POST http://localhost:8080/api/2.1/unity-catalog/schemas \
 ## Notes
 
 - This setup is for local experimentation, not production.
-- The Spark image is built from `eclipse-temurin:21-resolute` (Ubuntu 26.04, Java 21) with Python 3.14 installed from Ubuntu's native repositories. It runs pip installs as the unprivileged `spark` user (uid 185) via a `/opt/envs/spark` virtualenv. At runtime, all services run as `user: "0:0"` because they write to bind-mounted host directories (`./metadata`, `./workspace`) that are owned by the host user and not accessible to uid 185. The `dagster-webserver` and `dagster-daemon` services additionally require root for Docker socket access.
+- The Spark image uses a two-stage build: stage 1 compiles Spark from `branch-4.2` source using Maven on `eclipse-temurin:21`; stage 2 is `eclipse-temurin:21-resolute` (Ubuntu 26.04, Java 21) with Python 3.14 from Ubuntu's native repositories. It runs pip installs as the unprivileged `spark` user (uid 185) via a `/opt/envs/spark` virtualenv. At runtime, all services run as `user: "0:0"` because they write to bind-mounted host directories (`./metadata`, `./workspace`) that are owned by the host user and not accessible to uid 185. The `dagster-webserver` and `dagster-daemon` services additionally require root for Docker socket access.
+- `pandas` is pinned to `<3` in the Spark image. PySpark 4.2.0-SNAPSHOT issues a `FutureWarning` for pandas 3.x in several UDF code paths.
 - For a production-like setup, replace the shared local path with S3/ADLS/GCS and configure Unity Catalog storage credentials and external locations.
 - Notebooks in `workspace/notebooks/` are git-ignored except for `intro.ipynb`. Other `.ipynb` files can be used locally but are not tracked.
 
@@ -281,7 +307,7 @@ curl -sS -X POST http://localhost:8080/api/2.1/unity-catalog/schemas \
 - `uc-rotate`: A one-shot helper that refreshes MinIO STS credentials in `uc-conf/server.properties` before Unity Catalog starts.
 - `unitycatalog`: The open source Unity Catalog server running on port `8080`.
 - `ui`: The Unity Catalog UI running on port `3000`.
-- `spark`: The PySpark 4.1.2 execution environment running a Spark Connect server on port `15002`.
+- `spark`: PySpark 4.2.0-SNAPSHOT (built from `branch-4.2`) running a Spark Connect server on port `15002`.
 - `spark-history`: Dedicated Spark History Server running on port `18080` for event log visualization.
 - `dagster-webserver`: Dagster web UI running on port `3001` serving the control plane.
 - `dagster-daemon`: Dagster daemon process handling schedules, sensors, and run queue coordination.
