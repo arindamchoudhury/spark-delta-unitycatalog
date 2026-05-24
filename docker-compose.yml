@@ -118,6 +118,8 @@ services:
       minio:
         condition: service_healthy
     command: ["bash", "-lc", "/opt/spark/sbin/start-connect-server.sh && sleep infinity"]
+    environment:
+      - SPARK_DAEMON_JAVA_OPTS=--add-modules jdk.incubator.vector
     ports:
       - "4040:4040"
       - "4041:4041"
@@ -147,6 +149,7 @@ services:
     ports:
       - "18080:18080"
     environment:
+      - SPARK_DAEMON_JAVA_OPTS=--add-modules jdk.incubator.vector
       - SPARK_HISTORY_OPTS=-Dspark.history.fs.logDirectory=file:/tmp/spark-events
     healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(); s.connect(('127.0.0.1', 18080)); s.close()\""]
