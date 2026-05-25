@@ -9,11 +9,14 @@
   recycled and a stale socket flush fails.
 - In local mode those workers live in your **notebook kernel's process tree**,
   so the daemon's stderr shows up in your notebook output.
-- **Not** fixed by `spark.python.daemon.killWorkerOnFlushFailure` or
-  `spark.python.worker.reuse` — both were tested and still print.
-- **Fixed by using Spark Connect** (`.remote("sc://…")`): UDF workers run in the
-  server container, the client receives only the gRPC result stream, so output
-  is clean. The benign message stays in the server log.
+- **Not** fixed by `spark.python.daemon.killWorkerOnFlushFailure`,
+  `spark.python.worker.reuse`, or `spark.python.use.daemon` — all were tested
+  and still print (some produce more output, not less).
+- **Silenced in classic local mode** by redirecting OS fd 2 to a file *before*
+  `SparkSession.builder.getOrCreate()` — verified with two consecutive GSOD
+  `show()` calls; stdout was clean and the BrokenPipeError landed in the file.
+- **Also fixed by using Spark Connect** (`.remote("sc://…")`): UDF workers run
+  in the server container, output is clean client-side.
 - This is **not** SPARK-53609 — see "Not SPARK-53609" below.
 
 ## Symptom
@@ -63,13 +66,16 @@ UDF workers).
 
 | Setting | Result |
 |---------|--------|
-| `spark.python.daemon.killWorkerOnFlushFailure=false` | Still prints — a `"PySpark daemon failed to flush…"` line **plus** two tracebacks (more output, not less) |
+| `spark.python.daemon.killWorkerOnFlushFailure=false` | Still prints — a `"PySpark daemon failed to flush…"` warning **plus** two tracebacks (more output, not less) |
 | `spark.python.worker.reuse=false` | Still prints the same `BrokenPipeError` on the second action |
+| `spark.python.use.daemon=false` | Worse — adds `ConnectionResetError` on top of `BrokenPipeError` |
 
-Neither daemon/worker knob silences it. `killWorkerOnFlushFailure=false` only
-stops the worker *kill*; the stderr noise remains.
+None of these knobs silence it. The root cause is that `PythonWorkerFactory`
+unconditionally redirects daemon/worker stderr to the JVM's `System.err` via a
+`RedirectThread` — there is no config gate for that path. Config flags can
+affect *what* gets written, but not *where* it goes.
 
-## The fix: use Spark Connect
+## Alternative fix: use Spark Connect
 
 ```python
 spark = SparkSession.builder.remote("sc://localhost:15002").getOrCreate()
@@ -91,10 +97,44 @@ print(f"Spark {spark.version}")
 print(spark.sql("SELECT reflect('java.lang.System','getProperty','java.version') AS v").first()["v"])
 ```
 
-## If you must stay in classic local mode
+## Silencing in classic local mode (verified)
 
-The message is unavoidable benign noise — ignore it. Confirm correctness by
-comparing results against a non-UDF aggregate; they match.
+`PythonWorkerFactory` unconditionally routes daemon/worker stderr to the JVM's
+`System.err` via `RedirectThread`. The JVM inherits OS fd 2 at launch and
+there is no API to change it afterwards. The only reliable way to suppress the
+noise in-process is to redirect fd 2 to a file **before** the JVM starts —
+i.e., before `SparkSession.builder.getOrCreate()`.
+
+```python
+# Must be the first cell — redirect JVM stderr before SparkSession starts.
+# BrokenPipeErrors land in the file; your notebook output stays clean.
+# Real errors are still in /tmp/spark-stderr.log — check it if something breaks.
+import os
+_errfd = os.open("/tmp/spark-stderr.log", os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
+os.dup2(_errfd, 2)
+os.close(_errfd)
+```
+
+**Verified:** the twice-`show` GSOD pipeline (first show clean, second triggers
+the idle-worker recycle) produced clean stdout with the redirect in place.
+`BrokenPipe occurrences captured in fd2 file: 1` confirmed it was redirected,
+not suppressed.
+
+**Why it must come first:** `SparkSession.builder.getOrCreate()` spawns the
+JVM. The JVM inherits its fd 2 from Python at that moment. Redirecting fd 2
+after `getOrCreate()` only changes the Python process's fd; the JVM's copy is
+already fixed. This cell must run before any `SparkSession` construction.
+
+**Caveats:**
+- This redirects *all* JVM stderr — any real driver-side error will also go to
+  the file. Check `/tmp/spark-stderr.log` when debugging unexpected failures.
+- Do not redirect to `/dev/null`; you will lose genuine errors silently.
+- Jupyter alternative: `%%capture --no-display` on the offending cell only
+  captures that cell's output; it will not catch the async daemon flush noise
+  which arrives during a later cell. The fd-redirect above is the reliable
+  approach.
+
+This technique is applied as the first cell in `workspace/notebooks/chapter9.ipynb`.
 
 ## Not SPARK-53609
 
