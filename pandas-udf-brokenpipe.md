@@ -17,7 +17,6 @@
   `show()` calls; stdout was clean and the BrokenPipeError landed in the file.
 - **Also fixed by using Spark Connect** (`.remote("sc://…")`): UDF workers run
   in the server container, output is clean client-side.
-- This is **not** SPARK-53609 — see "Not SPARK-53609" below.
 
 ## Symptom
 
@@ -136,25 +135,7 @@ already fixed. This cell must run before any `SparkSession` construction.
 
 This technique is applied as the first cell in `workspace/notebooks/chapter9.ipynb`.
 
-## Not SPARK-53609
-
-This was initially attributed to **SPARK-53609** ("Apply arrow batching in
-`SQL_GROUPED_AGG_PANDAS_UDF`"). That is a real but **separate** correctness bug
-(grouped-agg Arrow batch slicing), fixed on `branch-4.2` by PR #52581 — which is
-why the `preview` branch builds Spark from `branch-4.2` source. It is **not** the
-cause of this `BrokenPipeError`:
-
-- SPARK-53609's own test (`test_arrow_batch_slicing`) was mirrored and **passed**
-  on 4.1.1 — each group received its full data, so the slicing bug does not
-  reproduce there.
-- The `BrokenPipeError` occurs even when results are fully correct, and is
-  triggered by repeated actions / idle-worker recycling, not by batch slicing.
-
-Keep building from `branch-4.2` for the SPARK-53609 fix on its own merits, but it
-is unrelated to this benign flush message.
-
 ## References
 
 - [SPARK-54344 — Kill the worker if flush fails in daemon.py](https://issues.apache.org/jira/browse/SPARK-54344) (introduced the message; default `kill=true` since 4.1.0)
 - [SPARK-47565 — PySpark workers dying in daemon idle queue](https://issues.apache.org/jira/browse/SPARK-47565)
-- [SPARK-53609](https://issues.apache.org/jira/browse/SPARK-53609) / [PR #52581](https://github.com/apache/spark/pull/52581) — separate batch-slicing fix, present on `branch-4.2`
