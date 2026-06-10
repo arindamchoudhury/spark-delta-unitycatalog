@@ -269,6 +269,27 @@ curl -sS -X POST http://localhost:8080/api/2.1/unity-catalog/schemas \
 - Open `unitycatalog.http` and use the REST Client extension to call the local Unity Catalog API directly from the editor.
 - If you want an in-container VS Code session, run `Dev Containers: Reopen in Container`. The `.devcontainer/devcontainer.json` file attaches VS Code to the running `spark` service while starting `unitycatalog` and `ui` alongside it. The default Python interpreter is set to `/opt/envs/spark/bin/python3`, which has all packages (`pyspark`, `ipykernel`, Dagster, etc.) pre-installed. Notebooks must be run inside the devcontainer — the host Python has none of these packages. The Jupyter kernel is registered as `spark` (display name **spark**) to avoid collision with the system `python3` kernel; select it from the kernel picker after reopening in container.
 
+### Devcontainer fails with `ubuntu.sock: no such file or directory` (Windows/WSL2)
+
+**Symptom:** Opening the devcontainer fails with:
+
+```
+Error response from daemon: accessing specified distro mount service:
+stat /run/guest-services/distro-services/ubuntu.sock: no such file or directory
+```
+
+**Cause:** Docker Desktop's WSL integration service inside the Ubuntu distro is
+not running or was not properly initialized.
+
+**Fix:** Re-enable the WSL integration for Ubuntu from Docker Desktop:
+
+1. Open **Docker Desktop → Settings → Resources → WSL Integration**
+2. Toggle **Ubuntu** off → click **Apply & Restart**
+3. Wait for Docker Desktop to restart fully (whale icon in tray stops animating)
+4. Toggle **Ubuntu** back on → **Apply & Restart** again
+
+Then retry **Dev Containers: Reopen in Container**.
+
 ## Notes
 
 - This setup is for local experimentation, not production.
