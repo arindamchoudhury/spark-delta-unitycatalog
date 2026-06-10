@@ -24,6 +24,7 @@ import sys
 from pathlib import Path
 import os
 
+# Apache Spark 4.1.2 / PySpark 4.1.2 · Python 3.14.4 · Delta Lake 4.2.0
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as F
 
@@ -33,7 +34,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 DATA_FILE  = SCRIPT_DIR / ".." / "data" / "gutenberg_books" / "1342-0.txt"
 
 os.environ["SPARK_LOCAL_IP"] = "127.0.0.1"
-conf_path = str(SCRIPT_DIR / "log4j2.xml")
+conf_path = (SCRIPT_DIR / "log4j2.xml").as_posix()
 
 spark = (
     SparkSession.builder
@@ -51,7 +52,7 @@ print(f"Spark {spark.version} · Python {sys.version.split()[0]}")
 # ── Read ───────────────────────────────────────────────────────────────────────
 
 # spark.read.text() is lazy — the file is not read until an action fires.
-book = spark.read.text(str(DATA_FILE))
+book = spark.read.text(DATA_FILE.as_posix())
 
 # ── Transform (all lazy) ───────────────────────────────────────────────────────
 
