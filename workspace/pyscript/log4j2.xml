@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+
+    <Appenders>
+        <Console name="console" target="SYSTEM_ERR">
+            <PatternLayout pattern="%d{HH:mm:ss} %-5level %logger{36} - %msg%n"/>
+        </Console>
+    </Appenders>
+
+    <Loggers>
+        <!--
+            ADDED: suppress task-failure executor noise.
+
+            Problem: when an RDD map/filter function raises on any element, Spark logs a full
+            Java stacktrace at ERROR level from EACH failing task before the exception reaches
+            Python. With default parallelism (2× CPU cores) multiple tasks run per job, so a
+            single logical error produces a wall of repeated Java traces.
+
+            These two loggers are the source:
+              - org.apache.spark.executor.Executor       → "Exception in task N.0 in stage M"
+              - org.apache.spark.scheduler.TaskSetManager → "Lost task N.0 in stage M" + "Task N failed"
+
+            Fix: set both to FATAL so they only fire if the JVM itself is dying.
+            They are listed BEFORE the parent "org.apache.spark" logger because Log4j2 resolves
+            most-specific-first — without this ordering the parent WARN entry would win.
+
+            Effect: task failure noise is gone; Spark startup, query plans, and other WARN-level
+            messages from the rest of org.apache.spark are unaffected.
+
+            Alternative (session-only): spark.sparkContext.setLogLevel("FATAL")
+        -->
+        <Logger name="org.apache.spark.executor.Executor"        level="FATAL" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+        <Logger name="org.apache.spark.scheduler.TaskSetManager"  level="FATAL" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+
+        <!-- Silence the four noisy Spark/Hadoop namespaces -->
+        <Logger name="org.apache.spark"  level="WARN" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+        <Logger name="org.apache.hadoop" level="WARN" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+        <Logger name="io.netty"          level="WARN" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+        <Logger name="org.spark_project" level="WARN" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+
+        <!-- Root catches everything else — your own code lands here -->
+        <Root level="WARN">
+            <AppenderRef ref="console"/>
+        </Root>
+    </Loggers>
+
+</Configuration>
