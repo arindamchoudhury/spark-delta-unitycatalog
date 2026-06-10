@@ -3,53 +3,50 @@ Word Count — Hello World for Distributed Computing
 ===================================================
 Counts the most frequent words in Pride and Prejudice (Project Gutenberg).
 
-spark-submit usage
-------------------
-Local mode (no cluster required):
-    spark-submit --master "local[*]" intro.py
+To run intro.py with spark-submit:
 
-Against the Docker stack (from the project root):
-    docker compose exec spark spark-submit \
-        --master "local[*]" \
+    # Local mode — no cluster required, uses all available CPU cores
+    SPARK_CONNECT_MODE=0 spark-submit --master "local[*]" workspace/pyscript/intro.py
+
+    # Against the Docker stack — submit inside the spark container
+    docker compose exec spark env SPARK_CONNECT_MODE=0 spark-submit \\
+        --master "local[*]" \\
         /workspace/pyscript/intro.py
 
-To see the Spark UI while running (local mode binds to port 4041):
-    open http://localhost:4041 in a browser while the job is running.
+To run with Connect mode (Docker stack already running):
+    docker compose exec spark python /workspace/pyscript/intro.py
+
+While the job runs, the Spark UI is available at http://localhost:4040
+(or 4041/4042 if 4040 is already taken by the Connect server).
 """
 
-import os
 import sys
 from pathlib import Path
+import os
 
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as F
 
 # ── Session setup ──────────────────────────────────────────────────────────────
 
-# Resolve paths relative to this script's location so spark-submit works
-# regardless of the working directory it is invoked from.
 SCRIPT_DIR = Path(__file__).resolve().parent
 DATA_FILE  = SCRIPT_DIR / ".." / "data" / "gutenberg_books" / "1342-0.txt"
-LOG4J_CONF = SCRIPT_DIR / "log4j2.xml"
 
 os.environ["SPARK_LOCAL_IP"] = "127.0.0.1"
+conf_path = str(SCRIPT_DIR / "log4j2.xml")
 
 spark = (
     SparkSession.builder
-    .appName("word-count")
     .config("spark.ui.port", "4041")
     .config(
         "spark.driver.extraJavaOptions",
-        f"-Dlog4j2.configurationFile={LOG4J_CONF}",
+        f"-Dlog4j2.configurationFile={conf_path}",
     )
+    .appName("word-count")
     .getOrCreate()
 )
 
-print(
-    f"Spark {spark.version} · "
-    f"Java {spark.sparkContext._jvm.java.lang.System.getProperty('java.version')} · "
-    f"Python {sys.version.split()[0]}"
-)
+print(f"Spark {spark.version} · Python {sys.version.split()[0]}")
 
 # ── Read ───────────────────────────────────────────────────────────────────────
 
