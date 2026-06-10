@@ -113,7 +113,7 @@ RUN --mount=type=bind,source=spark/jar,target=/tmp/jars \
 # ---------- Python 3.14 venv ----------
 RUN python3.14 -m venv /opt/envs/spark && chown -R spark:spark /opt/envs/spark
 
-ENV PATH="/opt/envs/spark/bin:$PATH" \
+ENV PATH="/opt/envs/spark/bin:/opt/spark/bin:$PATH" \
     JUPYTER_PATH="/opt/envs/spark/share/jupyter" \
     IPYTHONDIR="/opt/envs/spark/share/ipython" \
     PYSPARK_PYTHON=/opt/envs/spark/bin/python \
