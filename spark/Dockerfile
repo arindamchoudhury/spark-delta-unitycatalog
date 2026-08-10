@@ -5,8 +5,8 @@ ARG spark_uid=185
 
 # ---------- Version pins (read by download_deps.py) ----------
 ENV HADOOP_VERSION=3.4.3 \
-    SPARK_VERSION=4.1.2 \
-    SPARK_PACKAGE=spark-4.1.2-bin-hadoop3-connect \
+    SPARK_VERSION=4.2.0 \
+    SPARK_PACKAGE=spark-4.2.0-bin-hadoop3-connect \
     SCALA_VERSION=2.13 \
     HADOOP_AWS_VERSION=3.4.3 \
     AWS_SDK_BUNDLE_VERSION=2.35.4 \
@@ -59,7 +59,7 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*
 
 # ---------- Install Spark from local tarball ----------
-RUN --mount=type=bind,source=spark/tar/spark-4.1.2-bin-hadoop3-connect.tgz,target=/tmp/spark.tgz \
+RUN --mount=type=bind,source=spark/tar/spark-4.2.0-bin-hadoop3-connect.tgz,target=/tmp/spark.tgz \
     set -ex; \
     export SPARK_TMP="$(mktemp -d)"; \
     tar -xf /tmp/spark.tgz -C "$SPARK_TMP" --strip-components=1; \

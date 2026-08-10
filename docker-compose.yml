@@ -1,6 +1,6 @@
 services:
   uc-rotate:
-    image: spark-delta-unitycatalog/spark:4.1.2
+    image: spark-delta-unitycatalog/spark:4.2.0
     container_name: uc-rotate
     depends_on:
       minio:
@@ -109,7 +109,7 @@ services:
     build:
       context: .
       dockerfile: spark/Dockerfile
-    image: spark-delta-unitycatalog/spark:4.1.2
+    image: spark-delta-unitycatalog/spark:4.2.0
     container_name: spark
     user: "0:0"
     depends_on:
@@ -139,7 +139,7 @@ services:
       - ./workspace:/workspace
 
   spark-history:
-    image: spark-delta-unitycatalog/spark:4.1.2
+    image: spark-delta-unitycatalog/spark:4.2.0
     container_name: spark-history
     user: "0:0"
     depends_on:
@@ -160,7 +160,7 @@ services:
       - ./metadata/spark-events:/tmp/spark-events
 
   dagster-user-code:
-    image: spark-delta-unitycatalog/spark:4.1.2
+    image: spark-delta-unitycatalog/spark:4.2.0
     container_name: dagster-user-code
     user: "0:0"
     depends_on:
@@ -179,7 +179,7 @@ services:
       start_period: 60s
     environment:
       - DAGSTER_HOME=/workspace/dagster
-      - DAGSTER_CURRENT_IMAGE=spark-delta-unitycatalog/spark:4.1.2
+      - DAGSTER_CURRENT_IMAGE=spark-delta-unitycatalog/spark:4.2.0
     volumes:
       - ./metadata/uc:/tmp/uc
       - ./metadata/ivy:/tmp/.ivy2
@@ -189,7 +189,7 @@ services:
       - ./workspace:/workspace
 
   dagster-webserver:
-    image: spark-delta-unitycatalog/spark:4.1.2
+    image: spark-delta-unitycatalog/spark:4.2.0
     container_name: dagster-webserver
     user: "0:0"
     depends_on:
@@ -215,7 +215,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
   dagster-daemon:
-    image: spark-delta-unitycatalog/spark:4.1.2
+    image: spark-delta-unitycatalog/spark:4.2.0
     container_name: dagster-daemon
     user: "0:0"
     depends_on:

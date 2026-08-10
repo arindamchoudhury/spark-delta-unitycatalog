@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 import os
 
-# Apache Spark 4.1.2 / PySpark 4.1.2 · Python 3.14.4 · Delta Lake 4.2.0
+# Apache Spark 4.2.0 / PySpark 4.2.0 · Python 3.14.4 · Delta Lake 4.2.0
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as F
 
