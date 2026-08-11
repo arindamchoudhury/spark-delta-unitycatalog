@@ -3,6 +3,7 @@ spark/tar/*
 spark/jar/*
 metadata/ivy/**
 metadata/uc/**
+metadata/uc-db/**
 metadata/spark-events/**
 workspace/data/**
 !workspace/data/gutenberg_books/
@@ -25,6 +26,12 @@ bundle-*.jar
 # Unity Catalog config directory (contains rotated credentials)
 uc-conf/*
 !uc-conf/server.properties.orig
+# Mounting uc-conf over the image's etc/conf hides the files UC ships there.
+# These three carry no credentials and must be present or UC silently falls
+# back to an in-memory H2 database (see HibernateConfigurator).
+!uc-conf/hibernate.properties
+!uc-conf/cli.log4j2.properties
+!uc-conf/server.log4j2.properties
 
 # Ignore notebooks except intro.ipynb
 workspace/notebooks/*.ipynb

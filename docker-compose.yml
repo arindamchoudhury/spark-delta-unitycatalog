@@ -45,6 +45,10 @@ services:
     volumes:
       - ./metadata/uc:/tmp/uc
       - ./uc-conf:/home/unitycatalog/etc/conf
+      # UC's H2 database defaults to etc/db inside the image, so without this
+      # every container recreate silently discards all catalog/schema/table
+      # registrations. Seeded from the image's etc/db (which carries the schema).
+      - ./metadata/uc-db:/home/unitycatalog/etc/db
     networks:
       default:
         aliases:
