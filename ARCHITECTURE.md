@@ -13,7 +13,8 @@ The environment currently contains the following core pillars of a modern data s
 *   **Storage Format (Delta Lake):** 
     *   Data is stored using open-source Delta Lake, ensuring ACID transactions, time travel, and scalable metadata handling.
 *   **Data Catalog & Governance (Unity Catalog):** 
-    *   A central metastore and governance layer. Unity Catalog manages the tables and namespaces, meaning Spark queries simply reference `unity.default.table_name` rather than direct file paths. Includes a dedicated web UI.
+    *   A central metastore and governance layer. Unity Catalog manages the tables and namespaces, so Spark queries can reference `unity.default.table_name` rather than direct file paths. Includes a dedicated web UI.
+    *   **Currently limited on Spark 4.2:** the UC Spark connector is cross-built per Spark minor and no 4.2 build is published yet, so table resolution fails while metadata operations work. Delta by path is unaffected. See the "Known limitation" section in `README.md`.
 *   **Orchestration & Scheduling (Dagster):** 
     *   A modern, data-aware orchestrator. It executes asset-based DAGs and schedules workloads.
     *   Backed by **PostgreSQL**, ensuring robust run histories, event logs, and scheduler tracking.
@@ -27,7 +28,7 @@ The environment currently contains the following core pillars of a modern data s
 The current setup is already strong for local PySpark/Delta development. This section tracks what is complete and what can still be added for a closer hyperscale-cloud operating model.
 
 ### 2.1 Object Storage Layer (MinIO / S3 Simulation) (COMPLETED BASELINE)
-*   **Current State:** MinIO is fully integrated for local S3-compatible storage, and Spark + Delta + Unity Catalog are operating end-to-end against `s3://warehouse`.
+*   **Current State:** MinIO is fully integrated for local S3-compatible storage. Spark + Delta operate end-to-end against `s3://warehouse` (verified read, write and DML by path). Unity Catalog serves metadata but cannot resolve tables on Spark 4.2 — see the "Known limitation" section in `README.md`.
 *   **What Changed:**
     1. Spark image now bakes required S3A/AWS, Unity Catalog, and Delta jars, avoiding runtime dependency resolution and classloader conflicts.
     2. Unity Catalog is configured via `uc-conf/server.properties` and mounted as a directory to `/home/unitycatalog/etc/conf`.
@@ -35,7 +36,7 @@ The current setup is already strong for local PySpark/Delta development. This se
     4. Docker Compose now runs a one-shot `uc-rotate` service before `unitycatalog`, so fresh MinIO STS credentials are written into `uc-conf/server.properties` during stack startup.
 *   **Operational Notes:**
     1. STS credentials are temporary, but compose startup now rotates them automatically before Unity Catalog comes up.
-    2. If Unity Catalog metadata is reset, recreate catalog `unity` and schema `default` before running smoke tests.
+    2. Unity Catalog metadata now persists across container recreates: its H2 database is bind-mounted to `./metadata/uc-db`, seeded from the image so the shipped `unity` catalog and `default` schema are present. Delete that directory to reset the catalog.
     3. `scripts/rotate_uc_sts.py` remains the underlying rotation entrypoint and can still be run manually when the stack is already up.
 
 ### 2.1.1 Dagster Development Runtime
@@ -44,7 +45,7 @@ The current setup is already strong for local PySpark/Delta development. This se
     1. `workspace/dagster/pyproject.toml` declares a plain Python project whose code location root is `dagster_workspace`.
     2. The Dagster definitions live in the native package layout under `workspace/dagster/dagster_workspace/definitions.py` and `workspace/dagster/dagster_workspace/defs/`.
     3. Compose runs `uv sync` before `dg dev` (implemented as a lightweight shim to `uv run dagster dev`), so the service uses a pinned local `.venv` rather than the ambient container packages.
-    4. The local project environment pins Dagster `1.13.2` with companion libraries on the `0.29.2` line and no longer depends on the older `dagster-components` compatibility path.
+    4. The local project environment pins Dagster `1.13.17` with companion libraries on the `0.29.17` line and no longer depends on the older `dagster-components` compatibility path.
 
 ### 2.2 Interactive Notebook Server (JupyterLab)
 *   **Current State:** Notebooks are scheduled in the background via Papermill, but must be authored in an external IDE (like VS Code).

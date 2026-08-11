@@ -3,15 +3,29 @@
 This project wires together:
 
 - Apache Spark 4.2.0 (Scala 2.13, Java 21, Python 3.14, Ubuntu 26.04)
-- Delta Lake (Spark extension + connector)
-- Unity Catalog OSS server
+- Delta Lake 4.2.0 (Spark extension + connector)
+- Unity Catalog OSS 0.5.1 (server, Spark connector, and web UI)
+- MinIO for S3-compatible object storage
+- Dagster 1.13.17 for orchestration, backed by PostgreSQL
 
 The stack runs with Docker Compose and uses a shared mounted path (`/tmp/uc`) so
 Spark can read Delta table locations registered in Unity Catalog.
 
+> **Unity Catalog table access does not work on Spark 4.2.** Metadata operations
+> do; Delta by path does. See [Known limitation](#known-limitation-unity-catalog-tables-on-spark-42).
+
 Persistent data is stored on the host under `./metadata`, not in Docker
 named volumes. That means your catalog data and Spark dependency cache remain on
-disk even if you remove containers or rebuild the stack.
+disk even if you remove containers or rebuild the stack:
+
+| Path | Contents |
+| --- | --- |
+| `./metadata/minio` | MinIO object data (the `warehouse` bucket) |
+| `./metadata/uc-db` | Unity Catalog H2 database — catalogs, schemas, tables |
+| `./metadata/postgres` | Dagster run history and event logs |
+| `./metadata/spark-events` | Spark event logs for the History Server |
+| `./metadata/ivy` | Spark/Ivy dependency cache |
+| `./metadata/uc` | Shared path mounted into Unity Catalog as `/tmp/uc` |
 
 ## Prerequisites
 
@@ -32,10 +46,31 @@ This downloads into `spark/tar/` (tarballs) and `spark/jar/` (jars). Both direct
 
 The script reads all versions from `spark/Dockerfile` so there is no duplication — bump a version in the Dockerfile and re-run `download_deps.py` to refresh.
 
+### Images built from source
+
+Three services build from upstream source rather than pulling a published image,
+because no suitable image exists:
+
+| Service | Why | Build definition |
+| --- | --- | --- |
+| `minio` | The last published community image predates the fix for GHSA-jjjj-jwhf-8rgr (privilege escalation via session policy bypass in service accounts and STS). Upstream did not publish an image for the release that fixes it. | `minio/Dockerfile` |
+| `unitycatalog` | UC publishes server images for minor releases only, so there is no v0.5.1 image to match the 0.5.1 jars. | `unitycatalog/Dockerfile` |
+| `ui` | The `unitycatalog-ui` repo was archived in 2024 and merged into the main repo; its image has not been rebuilt since. Built from the tagged source, matching upstream's own compose file. | remote git build context in `docker-compose.yml` |
+
+These need network access on first build and take several minutes (sbt, Go and
+yarn builds). They are cached afterwards. Everything is pinned to an explicit
+upstream tag or commit.
+
 ## Start the stack
 
 ```bash
 docker compose up -d
+```
+
+Compose builds any missing images automatically. To rebuild explicitly:
+
+```bash
+docker compose build && docker compose up -d
 ```
 
 The Unity Catalog UI is available at `http://localhost:3000`.
@@ -339,14 +374,19 @@ Then retry **Dev Containers: Reopen in Container**.
 
 - This setup is for local experimentation, not production.
 - The Spark image is built from `eclipse-temurin:21-resolute` (Ubuntu 26.04, Java 21) with Python 3.14 installed from Ubuntu's native repositories. It runs pip installs as the unprivileged `spark` user (uid 185) via a `/opt/envs/spark` virtualenv. At runtime, all services run as `user: "0:0"` because they write to bind-mounted host directories (`./metadata`, `./workspace`) that are owned by the host user and not accessible to uid 185. The `dagster-webserver` and `dagster-daemon` services additionally require root for Docker socket access.
+- `uc-conf/` is mounted over the Unity Catalog image's `etc/conf`, which hides the files shipped there. `hibernate.properties`, `cli.log4j2.properties` and `server.log4j2.properties` are therefore tracked in this repo and must stay present — without `hibernate.properties`, Unity Catalog silently falls back to an in-memory H2 database and loses every catalog on restart. The rest of `uc-conf/` is git-ignored because `server.properties` receives rotated STS credentials.
+- `pandas` is pinned below 3.0 in `spark/Dockerfile`. PySpark 4.2.0 does not yet fully support pandas 3.x and warns on the Arrow paths (`toPandas`, `createDataFrame`, pandas UDFs, pandas-on-Spark).
 - For a production-like setup, replace the shared local path with S3/ADLS/GCS and configure Unity Catalog storage credentials and external locations.
 - Notebooks in `workspace/notebooks/` are git-ignored except for `intro.ipynb`. Other `.ipynb` files can be used locally but are not tracked.
 
 ## Services
 
+- `minio`: S3-compatible object storage on port `9000`, console on `9001`. Built from source; see [Images built from source](#images-built-from-source).
+- `minio-setup`: A one-shot helper that creates the `warehouse` bucket. Idempotent, and fails loudly if MinIO is unreachable or credentials are wrong.
 - `uc-rotate`: A one-shot helper that refreshes MinIO STS credentials in `uc-conf/server.properties` before Unity Catalog starts.
-- `unitycatalog`: The open source Unity Catalog server running on port `8080`.
-- `ui`: The Unity Catalog UI running on port `3000`.
+- `unitycatalog`: The open source Unity Catalog server (v0.5.1) running on port `8080`. Built from source. Waits for both `uc-rotate` and `minio-setup` to complete.
+- `ui`: The Unity Catalog UI running on port `3000`. Built from source.
+- `postgres`: Backing store for Dagster run history and event logs.
 - `spark`: The PySpark 4.2.0 execution environment running a Spark Connect server on port `15002`.
 - `spark-history`: Dedicated Spark History Server running on port `18080` for event log visualization.
 - `dagster-webserver`: Dagster web UI running on port `3001` serving the control plane.
@@ -400,7 +440,7 @@ When assets materialize (via schedule or manual trigger):
 
 The Dagster stack is configured via `workspace/dagster/`:
 
-- `pyproject.toml`: Pinned Dagster 1.13.2 + companions (dagster-postgres, dagster-docker).
+- `pyproject.toml`: Pinned Dagster 1.13.17 + companions on the 0.29.17 line (dagster-postgres, dagster-docker).
 - `dagster.yaml`: Instance configuration with Postgres storage, QueuedRunCoordinator, and DockerRunLauncher.
 - `workspace.yaml`: Points webserver/daemon to gRPC code server.
 - `dagster_workspace/definitions.py`: Exports asset definitions, jobs, and schedules.
