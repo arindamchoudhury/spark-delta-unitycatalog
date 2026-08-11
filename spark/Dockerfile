@@ -12,7 +12,8 @@ ENV HADOOP_VERSION=3.4.3 \
     AWS_SDK_BUNDLE_VERSION=2.35.4 \
     AWS_ANALYTICS_ACCELERATOR_VERSION=1.3.1 \
     WILDFLY_OPENSSL_VERSION=2.2.5.Final \
-    UNITYCATALOG_VERSION=0.4.1 \
+    UNITYCATALOG_VERSION=0.5.1 \
+    UNITYCATALOG_SPARK_PROFILE=4.1 \
     DELTA_VERSION=4.2.0
 
 # ---------- Spark user ----------
@@ -31,7 +32,8 @@ RUN --mount=type=bind,source=.,target=/src \
         "spark/jar/analyticsaccelerator-s3-${AWS_ANALYTICS_ACCELERATOR_VERSION}.jar" \
         "spark/jar/wildfly-openssl-${WILDFLY_OPENSSL_VERSION}.jar" \
         "spark/jar/unitycatalog-client-${UNITYCATALOG_VERSION}.jar" \
-        "spark/jar/unitycatalog-spark_${SCALA_VERSION}-${UNITYCATALOG_VERSION}.jar" \
+        "spark/jar/unitycatalog-hadoop-${UNITYCATALOG_VERSION}.jar" \
+        "spark/jar/unitycatalog-spark_${UNITYCATALOG_SPARK_PROFILE}_${SCALA_VERSION}-${UNITYCATALOG_VERSION}.jar" \
         "spark/jar/delta-spark_${SCALA_VERSION}-${DELTA_VERSION}.jar" \
         "spark/jar/delta-storage-${DELTA_VERSION}.jar"; \
     do \
@@ -105,7 +107,8 @@ RUN --mount=type=bind,source=spark/jar,target=/tmp/jars \
         "/tmp/jars/analyticsaccelerator-s3-${AWS_ANALYTICS_ACCELERATOR_VERSION}.jar" \
         "/tmp/jars/wildfly-openssl-${WILDFLY_OPENSSL_VERSION}.jar" \
         "/tmp/jars/unitycatalog-client-${UNITYCATALOG_VERSION}.jar" \
-        "/tmp/jars/unitycatalog-spark_${SCALA_VERSION}-${UNITYCATALOG_VERSION}.jar" \
+        "/tmp/jars/unitycatalog-hadoop-${UNITYCATALOG_VERSION}.jar" \
+        "/tmp/jars/unitycatalog-spark_${UNITYCATALOG_SPARK_PROFILE}_${SCALA_VERSION}-${UNITYCATALOG_VERSION}.jar" \
         "/tmp/jars/delta-spark_${SCALA_VERSION}-${DELTA_VERSION}.jar" \
         "/tmp/jars/delta-storage-${DELTA_VERSION}.jar" \
         /opt/spark/jars/
@@ -125,9 +128,9 @@ USER spark
 
 RUN pip install --no-cache-dir \
     ipykernel \
-    pandas scikit-learn pyarrow grpcio grpcio-status zstandard \
-    dagster==1.13.2 dagster-webserver==1.13.2 dagstermill==0.29.2 papermill \
-    dagster-postgres==0.29.2 psycopg2-binary awscli uv \
+    "pandas<3" scikit-learn pyarrow grpcio grpcio-status zstandard \
+    dagster==1.13.17 dagster-webserver==1.13.17 dagstermill==0.29.17 papermill \
+    dagster-postgres==0.29.17 psycopg2-binary awscli uv \
     unitycatalog-ai==0.4.0 \
     unitycatalog-openai==0.4.0 \
     unitycatalog-anthropic==0.2.0 \

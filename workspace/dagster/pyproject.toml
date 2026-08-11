@@ -3,11 +3,11 @@ name = "dagster-workspace"
 version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
-	"dagster==1.13.2",
-	"dagster-webserver==1.13.2",
-	"dagster-docker==0.29.2",
-	"dagster-postgres==0.29.2",
-	"dagstermill==0.29.2",
+	"dagster==1.13.17",
+	"dagster-webserver==1.13.17",
+	"dagster-docker==0.29.17",
+	"dagster-postgres==0.29.17",
+	"dagstermill==0.29.17",
 	"pyspark==4.2.0",
 	"unitycatalog-ai==0.4.0",
 	"unitycatalog-openai==0.4.0",

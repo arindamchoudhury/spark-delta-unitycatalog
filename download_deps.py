@@ -113,6 +113,7 @@ async def main() -> None:
     accel      = env["AWS_ANALYTICS_ACCELERATOR_VERSION"]
     wildfly    = env["WILDFLY_OPENSSL_VERSION"]
     uc_ver     = env["UNITYCATALOG_VERSION"]
+    uc_spark   = env["UNITYCATALOG_SPARK_PROFILE"]
     delta_ver  = env["DELTA_VERSION"]
 
     downloads = [
@@ -123,7 +124,10 @@ async def main() -> None:
         (jar_url("software.amazon.s3.analyticsaccelerator", "analyticsaccelerator-s3",     accel),      JAR_DIR / f"analyticsaccelerator-s3-{accel}.jar"),
         (jar_url("org.wildfly.openssl",                     "wildfly-openssl",             wildfly),    JAR_DIR / f"wildfly-openssl-{wildfly}.jar"),
         (jar_url("io.unitycatalog",                         "unitycatalog-client",         uc_ver),     JAR_DIR / f"unitycatalog-client-{uc_ver}.jar"),
-        (jar_url("io.unitycatalog",                         f"unitycatalog-spark_{scala}", uc_ver),     JAR_DIR / f"unitycatalog-spark_{scala}-{uc_ver}.jar"),
+        (jar_url("io.unitycatalog",                         "unitycatalog-hadoop",         uc_ver),     JAR_DIR / f"unitycatalog-hadoop-{uc_ver}.jar"),
+        # Since UC 0.5.x the Spark connector ships one artifact per Spark minor
+        # (unitycatalog-spark_<spark>_<scala>), not a single unitycatalog-spark_<scala>.
+        (jar_url("io.unitycatalog",             f"unitycatalog-spark_{uc_spark}_{scala}",  uc_ver),     JAR_DIR / f"unitycatalog-spark_{uc_spark}_{scala}-{uc_ver}.jar"),
         (jar_url("io.delta",                                f"delta-spark_{scala}",        delta_ver),  JAR_DIR / f"delta-spark_{scala}-{delta_ver}.jar"),
         (jar_url("io.delta",                                "delta-storage",               delta_ver),  JAR_DIR / f"delta-storage-{delta_ver}.jar"),
     ]
