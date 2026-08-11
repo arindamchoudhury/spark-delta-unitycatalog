@@ -169,7 +169,52 @@ docker compose exec spark /opt/spark/bin/spark-sql -f /opt/spark/scripts/smoke-t
 ```
 
 The SQL file is mounted from `./scripts/smoke-test.sql` and checks that Spark
-can list and query Unity Catalog tables.
+can list Unity Catalog catalogs, namespaces and tables. Its `CREATE TABLE` step
+is commented out — see [Known limitation](#known-limitation-unity-catalog-tables-on-spark-42) below.
+
+## Known limitation: Unity Catalog tables on Spark 4.2
+
+Unity Catalog **metadata** operations work. Resolving, reading, or creating a UC
+**table** from Spark does not:
+
+```
+java.lang.NoSuchMethodError: org.apache.spark.sql.catalyst.catalog.CatalogTable.<init>(...)
+java.lang.NoSuchMethodError: org.apache.spark.sql.catalyst.catalog.CatalogStorageFormat.copy(...)
+```
+
+The UC Spark connector is cross-built per Spark minor version, and no Spark 4.2
+build is published — the newest is `unitycatalog-spark_4.1_2.13`, which this
+stack pins. Spark 4.2 changed two Catalyst signatures the connector compiles
+against: `CatalogTable` gained a `multipartIdentifier` parameter (SPARK-52729)
+and `CatalogStorageFormat` gained `serdeName` (SPARK-55645). The older 0.4.1
+connector does not help — it was built against Spark 4.0.
+
+| Works | Does not work |
+| --- | --- |
+| `SHOW CATALOGS`, `SHOW NAMESPACES`, `SHOW TABLES` | `SELECT` / `CREATE TABLE` on `unity.*` |
+| Delta by path, including DML | UC-managed table resolution |
+| The UC REST API and UI directly | |
+
+Delta itself is unaffected — read, write and `DELETE` against
+`s3a://warehouse/...` all work on Spark 4.2. Use path-based access meanwhile:
+
+```python
+df.write.format("delta").mode("overwrite").save("s3a://warehouse/my_table")
+spark.read.format("delta").load("s3a://warehouse/my_table")
+```
+
+Both upstreams have already landed Spark 4.2 support on their development
+branches but have not released it: Unity Catalog `main` builds
+`unitycatalog-spark_4.2_2.13` (added 2026-07-20, two days after v0.5.1), and
+Delta `master` (4.4.0-SNAPSHOT) makes Spark 4.2 its default target. Building
+from source is not currently a shortcut — UC's 4.2 profile depends on
+`delta-spark_4.2_2.13`, which Delta has not published, so it would require
+building Delta from `master` as well.
+
+When those releases land, bump `UNITYCATALOG_VERSION` and
+`UNITYCATALOG_SPARK_PROFILE` in `spark/Dockerfile` to `4.2` and re-enable the
+`CREATE TABLE` step in `scripts/smoke-test.sql`. The alternative today is
+downgrading Spark to 4.1, which every dependency in this stack supports.
 
 ## Spark History Server
 
